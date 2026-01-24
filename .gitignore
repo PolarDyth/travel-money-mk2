@@ -36,8 +36,12 @@ yarn-error.log*
 # vscode
 .vscode/*
 
+# github
+.github/*
+
 # claude
 .claude/*
+CLAUDE.md
 
 # vercel
 .vercel

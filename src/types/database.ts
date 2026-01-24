@@ -557,6 +557,7 @@ export type Database = {
           last_name: string
           max_transaction_amount: number | null
           pin_hash: string | null
+          requires_new_password: boolean | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -572,6 +573,7 @@ export type Database = {
           last_name: string
           max_transaction_amount?: number | null
           pin_hash?: string | null
+          requires_new_password?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -587,6 +589,7 @@ export type Database = {
           last_name?: string
           max_transaction_amount?: number | null
           pin_hash?: string | null
+          requires_new_password?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }

@@ -71,6 +71,7 @@ import { hasRoleOrHigher, USER_ROLES } from '@/types'
 - Do not introduce new libraries without reason
 - Follow existing project patterns
 - Never use any or unknown as a type, use types from `@/types`
+- If you need to use a shadcn component use the CLI to download it
 
 ## UI / UX Rules
 - This is a till system, not a consumer app
