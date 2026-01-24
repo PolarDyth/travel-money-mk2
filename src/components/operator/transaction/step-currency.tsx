@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon, ArrowLeftRight } from "lucide-react";
-import { calculateExchangeAmount } from '@/lib/transaction-utils';
 import { Currency, TransactionUpdateHandler } from '@/app/operator/transaction/types';
 
 interface StepCurrencyProps {

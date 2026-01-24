@@ -1,9 +1,7 @@
 'use server'
 
 import { createClient } from "@/utils/supabase/server"
-import { Database } from "@/types/database"
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 export type TransactionDraft = {
   type: 'buy' | 'sell';

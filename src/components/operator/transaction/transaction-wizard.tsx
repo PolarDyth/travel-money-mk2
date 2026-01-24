@@ -1,14 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useTransaction, WizardStep } from './use-transaction';
+import { useTransaction } from './use-transaction';
 import { Stepper } from "@/components/ui/stepper";
 import { StepCurrency } from './step-currency';
 import { StepCustomer } from './step-customer';
 import { StepDenominations } from './step-denominations';
 import { StepReview } from './step-review';
 import { StepSuccess } from './step-success';
-import { submitTransaction, TransactionDraft } from '@/app/operator/transaction/actions';
+import { submitTransaction } from '@/app/operator/transaction/actions';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Currency, ExchangeRate, Denomination } from "@/app/operator/transaction/types";

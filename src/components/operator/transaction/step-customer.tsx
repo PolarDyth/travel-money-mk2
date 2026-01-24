@@ -1,12 +1,10 @@
 'use client';
 
-import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon, AlertTriangle } from "lucide-react";
 import { TransactionDraft } from '@/app/operator/transaction/actions';
 import { TransactionUpdateHandler } from '@/app/operator/transaction/types';

@@ -9,7 +9,6 @@ import {
   Wallet,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DashboardShell } from "./shared/dashboard-shell";
 import { AlertCard } from "./shared/alert-card";
 import { DrawerStatus } from "./widgets/operator/drawer-status";
@@ -27,7 +26,7 @@ export function OperatorDashboard() {
   const router = useRouter();
   const { user, isLoading, error } = useUser();
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
-  const [drawerBalance, setDrawerBalance] = useState(MOCK_DRAWER_BALANCE);
+  const [drawerBalance, _setDrawerBalance] = useState(MOCK_DRAWER_BALANCE);
 
   // Navigation handlers
   const handleSellCurrency = useCallback(() => {
