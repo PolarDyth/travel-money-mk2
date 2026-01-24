@@ -3,7 +3,6 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { DashboardShell } from "./shared/dashboard-shell";
 import { TillStatusGrid } from "./widgets/supervisor/till-status-grid";
 import { BranchSummary } from "./widgets/supervisor/branch-summary";
 import { OperatorMetrics } from "./widgets/supervisor/operator-metrics";
@@ -18,7 +17,7 @@ import {
 
 export function SupervisorDashboard() {
   const router = useRouter();
-  const { user, isLoading, error } = useUser();
+  const { user } = useUser();
 
   // Quick action handlers
   const handleOverrideRate = useCallback(() => {
@@ -52,7 +51,6 @@ export function SupervisorDashboard() {
   );
 
   return (
-    <DashboardShell user={user} isLoading={isLoading} error={error}>
       <div className="space-y-6">
         {/* Header with Quick Actions */}
         <div className="flex items-center justify-between">
@@ -146,7 +144,6 @@ export function SupervisorDashboard() {
           />
         </div>
       </div>
-    </DashboardShell>
   );
 }
 

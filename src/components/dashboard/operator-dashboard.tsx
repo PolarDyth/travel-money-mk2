@@ -9,7 +9,6 @@ import {
   Wallet,
   AlertCircle,
 } from "lucide-react";
-import { DashboardShell } from "./shared/dashboard-shell";
 import { AlertCard } from "./shared/alert-card";
 import { DrawerStatus } from "./widgets/operator/drawer-status";
 import { RatesTicker } from "./widgets/operator/rates-ticker";
@@ -24,7 +23,7 @@ const MOCK_DRAWER_BALANCE = 5420.5;
 
 export function OperatorDashboard() {
   const router = useRouter();
-  const { user, isLoading, error } = useUser();
+  const { user, isLoading } = useUser();
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
   const [drawerBalance, _setDrawerBalance] = useState(MOCK_DRAWER_BALANCE);
 
@@ -38,7 +37,7 @@ export function OperatorDashboard() {
   }, [router]);
 
   const handleDrawerOps = useCallback(() => {
-    router.push("/drawer");
+    router.push("/operator/drawer");
   }, [router]);
 
   const handleFindTransaction = useCallback(() => {
@@ -73,14 +72,6 @@ export function OperatorDashboard() {
   }, []);
 
   return (
-    <DashboardShell
-      user={user}
-      isLoading={isLoading}
-      error={error}
-      drawerBalance={drawerBalance}
-      showDrawerBalance={true}
-      posPosition="Pos 01"
-    >
       <div className="grid grid-rows-[auto_1fr] gap-6">
         {/* Primary Action Area (Top Deck) */}
         <section className="grid grid-cols-12 gap-6 h-[220px]">
@@ -213,6 +204,5 @@ export function OperatorDashboard() {
           </div>
         </section>
       </div>
-    </DashboardShell>
   );
 }

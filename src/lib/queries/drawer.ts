@@ -1,0 +1,130 @@
+import { createClient } from "@/utils/supabase/client";
+import type { CurrencyDenomination, Transaction } from "@/types";
+
+export type DenominationWithCurrency = CurrencyDenomination & {
+  currency: {
+    code: string;
+    symbol: string;
+    name: string;
+  };
+};
+
+export type DrawerSummary = {
+  sessionId: string;
+  openingFloatGbp: number;
+  expectedGbp: number;
+  expectedForeign: Record<string, number>; // Currency Code -> Amount
+  transactionsCount: number;
+  transactions: Transaction[];
+};
+
+export async function getDenominations(): Promise<DenominationWithCurrency[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("currency_denominations")
+    .select(`
+      *,
+      currency:currencies!currency_code (
+        code,
+        symbol,
+        name
+      )
+    `)
+    .eq("is_active", true)
+    .order("currency_code", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching denominations:", error);
+    return [];
+  }
+
+  return data as unknown as DenominationWithCurrency[];
+}
+
+export async function getExchangeRates(): Promise<Record<string, number>> {
+    const supabase = createClient();
+    const { data: rates } = await supabase
+        .from('exchange_rates')
+        .select('currency_code, buy_rate, sell_rate')
+        .is('effective_until', null); // Assuming current rates have effective_until = null based on typical patterns, or check latest.
+        // Actually schema scan earlier showed effective_until.
+    
+    const map: Record<string, number> = {};
+    if (rates) {
+        rates.forEach(r => {
+            map[r.currency_code] = (r.buy_rate + r.sell_rate) / 2;
+        });
+    }
+    return map;
+}
+
+export async function getDrawerSummary(sessionId: string): Promise<DrawerSummary | null> {
+  const supabase = createClient();
+  
+  const { data: session } = await supabase.from('drawer_sessions').select('*').eq('id', sessionId).single();
+  if (!session) return null;
+
+  const { data: openingCounts, error: countError } = await supabase
+    .from('drawer_denomination_counts')
+    .select(`
+        quantity,
+        denomination:currency_denominations (
+            currency_code,
+            value
+        )
+    `)
+    .eq('session_id', sessionId)
+    .eq('count_type', 'opening');
+
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('drawer_session_id', sessionId)
+    .eq('status', 'completed');
+
+  const expectedForeign: Record<string, number> = {};
+  let expectedGbp = 0;
+
+  if (openingCounts) {
+      openingCounts.forEach((c: any) => {
+        const code = c.denomination.currency_code;
+        const val = c.quantity * c.denomination.value;
+        
+        if (code === 'GBP') {
+          expectedGbp += val;
+        } else {
+          expectedForeign[code] = (expectedForeign[code] || 0) + val;
+        }
+      });
+  }
+
+  transactions?.forEach(t => {
+     const foreignAmt = t.foreign_amount || 0;
+     const baseAmt = t.base_amount || 0; 
+     const commission = t.commission_amount || 0; 
+     
+     if (t.transaction_type === 'buy') {
+        if (t.foreign_currency_code) {
+             const code = t.foreign_currency_code;
+             expectedForeign[code] = (expectedForeign[code] || 0) + foreignAmt;
+        }
+        expectedGbp -= (baseAmt - commission);
+     } else if (t.transaction_type === 'sell') {
+        if (t.foreign_currency_code) {
+             const code = t.foreign_currency_code;
+             expectedForeign[code] = (expectedForeign[code] || 0) - foreignAmt;
+        }
+        expectedGbp += (baseAmt + commission);
+     }
+  });
+
+  return {
+    sessionId,
+    openingFloatGbp: session.opening_float_gbp,
+    expectedGbp,
+    expectedForeign,
+    transactionsCount: transactions?.length || 0,
+    transactions: transactions || []
+  };
+}

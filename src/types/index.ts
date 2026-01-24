@@ -61,6 +61,11 @@ export type DrawerSessionStatus = Database['public']['Enums']['drawer_session_st
 export type DenominationType = Database['public']['Enums']['denomination_type']
 export type RateSource = Database['public']['Enums']['rate_source']
 
+export type DenominationCount = {
+  denomination_id: string
+  count: number
+}
+
 // ============================================
 // Enum Constants (for runtime use)
 // ============================================

@@ -2,7 +2,6 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardShell } from "./shared/dashboard-shell";
 import { BranchComparison } from "./widgets/manager/branch-comparison";
 import { ReconciliationQueue } from "./widgets/manager/reconciliation-queue";
 import { TrendCharts } from "./widgets/manager/trend-charts";
@@ -12,7 +11,7 @@ import { useUser } from "@/lib/hooks/use-user";
 
 export function ManagerDashboard() {
   const router = useRouter();
-  const { user, isLoading, error } = useUser();
+  const { user } = useUser();
 
   // Navigation handlers
   const handleSelectBranch = useCallback(
@@ -48,7 +47,6 @@ export function ManagerDashboard() {
   );
 
   return (
-    <DashboardShell user={user} isLoading={isLoading} error={error}>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -85,6 +83,5 @@ export function ManagerDashboard() {
         {/* Staff Performance Table - Full Width */}
         <StaffPerformance />
       </div>
-    </DashboardShell>
   );
 }

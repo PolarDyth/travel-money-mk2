@@ -1,25 +1,52 @@
 This repository is a retail POS system for a currency exchange bureau (M&S-style).
 It is used by operators in-store, so correctness, clarity, and safety matter more than clever code.
 
-
 ## Tech Stack
-- Next.js (App Router)
-- TypeScript (strict)
-- Tailwind CSS
-- shadcn/ui
-- Supabase (Postgres + RLS)
-- Sentry Error capturing
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript (strict)
+- **Styling**: Tailwind CSS v4
+- **UI Components**: shadcn/ui (Radix primitives)
+- **Icons**: Lucide React
+- **Validation**: Zod
+- **Charts**: Recharts
+- **Backend/Auth**: Supabase (Postgres + RLS)
+- **Key Libraries**: `@sentry/nextjs` (Error capturing)
 
 ## Project Structure
 ```
 src/
-├── app/                    # Next.js App Router pages
+├── app/                    # Next.js App Router pages & actions
+│   ├── admin/              # Role-based route groups
+│   ├── api/                # Route Handlers
+│   ├── auth/               # Authentication flows
+│   ├── operator/           # Core transaction flows
+│   └── ...
+├── components/
+│   ├── dashboard/          # Role-specific dashboard views
+│   ├── ui/                 # shadcn/ui components
+│   └── ...
+├── lib/
+│   ├── hooks/              # Custom React hooks
+│   ├── queries/            # Data fetching logic (Server & Client)
+│   ├── transaction-utils.ts # Core business logic
+│   └── utils.ts            # UI helpers
 ├── types/
 │   ├── database.ts         # Supabase generated types (do not edit manually)
-│   └── index.ts            # Type aliases and helpers
-docs/
-└── database-schema-plan.md # Database design documentation
+│   └── index.ts            # Domain types & helpers (use this)
+├── utils/
+│   └── supabase/           # Auth & Client initialization
+scripts/                    # Seeding & utility scripts
+docs/                       # Documentation
 ```
+
+## Architecture & Patterns
+- **Data Fetching**: 
+  - Prefer Server Components fetching data directly via `src/lib/queries`.
+  - Use **Server Actions** (`actions.ts`) for mutations (create/update).
+  - **No React Query**: State is managed via Server Actions/App Router or local state.
+- **Transactions**: 
+  - Complex wizard flows use `use-transaction.ts` hook.
+  - Final submission is a Server Action.
 
 ## Database Schema
 
@@ -61,40 +88,36 @@ docs/
 
 ### Type Usage
 ```typescript
+// ALWAYS import from @/types, never @types/database directly
 import type { Branch, Transaction, UserRole } from '@/types'
 import { hasRoleOrHigher, USER_ROLES } from '@/types'
 ```
 
 ## General Rules
-- Prefer readability over abstraction
-- Avoid overly clever or compressed logic
-- Do not introduce new libraries without reason
-- Follow existing project patterns
-- Never use any or unknown as a type, use types from `@/types`
-- If you need to use a shadcn component use the CLI to download it
+- **Correctness First**: This handles money. Logic must be airtight.
+- **Readability**: Prefer obvious code.
+- **Type Safety**: Strictly typed. No `any`. Use `zod` for input validation.
+- **Component Usage**: If you need a shadcn component use the CLI to download it.
+- **File Placement**: 
+  - Business logic → `src/lib`
+  - Data queries → `src/lib/queries`
+  - Reusable UI → `src/components/ui`
 
 ## UI / UX Rules
-- This is a till system, not a consumer app
-- Actions must be clear and explicit
-- Avoid animations that slow down interactions
-- Large numbers must be easy to read
-- Buy and Sell flows must remain visually distinct
-
-## Styling
-- Use Tailwind utility classes
-- Use design tokens (no hardcoded colors)
-- Follow M&S-inspired neutral palette
+- This is a till system, not a consumer app.
+- Actions must be clear and explicit.
+- Large numbers must be easy to read (monospace fonts for figures often help).
+- Buy and Sell flows must remain visually distinct.
 
 ## Data & Security
-- Assume all input is untrusted
-- RLS is enforced at the database layer
-- Never bypass RLS logic in application code
-- Do not generate SQL directly unless necessary
-- All monetary amounts use DECIMAL for precision
-- All timestamps use TIMESTAMPTZ for timezone awareness
+- Assume all input is untrusted.
+- RLS is enforced at the database layer.
+- Never bypass RLS logic in application code.
+- All monetary amounts use DECIMAL for precision.
+- All timestamps use TIMESTAMPTZ for timezone awareness.
 
 ## Behaviour
-- Do NOT generate large blocks of code unless asked
-- Prefer small, incremental suggestions
-- If unsure, ask clarifying questions
-- Avoid "magic" solutions
+- Do NOT generate large blocks of code unless asked.
+- Prefer small, incremental suggestions.
+- If unsure, ask clarifying questions.
+- Avoid "magic" solutions.

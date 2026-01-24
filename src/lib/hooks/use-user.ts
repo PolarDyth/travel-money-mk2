@@ -7,6 +7,7 @@ import { hasRoleOrHigher } from "@/types";
 
 export type UserWithBranch = StaffProfile & {
   branch: Branch | null;
+  email?: string;
 };
 
 type UseUserReturn = {
@@ -50,7 +51,10 @@ export function useUser(): UseUserReturn {
         throw new Error(profileError.message);
       }
 
-      setUser(profile as UserWithBranch);
+      setUser({
+        ...profile,
+        email: authData.user.email
+      } as UserWithBranch);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch user"));
       setUser(null);

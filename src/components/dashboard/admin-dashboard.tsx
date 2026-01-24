@@ -2,18 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { DashboardShell } from "./shared/dashboard-shell";
 import { SystemHealth } from "./widgets/admin/system-health";
 import { AuditTrail } from "./widgets/admin/audit-trail";
 import { ComplianceOverview } from "./widgets/admin/compliance-overview";
 import { StaffDirectory } from "./widgets/admin/staff-directory";
-import { useUser } from "@/lib/hooks/use-user";
 import { getSystemHealth, type SystemHealthStats } from "@/lib/queries/admin";
 import { Monitor, AlertTriangle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function AdminDashboard() {
-  const { user, isLoading, error } = useUser();
   const [stats, setStats] = useState<SystemHealthStats | null>(null);
 
   useEffect(() => {
@@ -37,7 +34,6 @@ export function AdminDashboard() {
   };
 
   return (
-    <DashboardShell user={user} isLoading={isLoading} error={error}>
       <div className="space-y-6">
         {/* Status Bar */}
         <div className="bg-black text-white p-3 flex items-center justify-between">
@@ -99,7 +95,6 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
-    </DashboardShell>
   );
 }
 
