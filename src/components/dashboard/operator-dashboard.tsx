@@ -31,11 +31,11 @@ export function OperatorDashboard() {
 
   // Navigation handlers
   const handleSellCurrency = useCallback(() => {
-    router.push("/sell");
+    router.push("/operator/transaction");
   }, [router]);
 
   const handleBuyCurrency = useCallback(() => {
-    router.push("/buy");
+    router.push("/operator/transaction");
   }, [router]);
 
   const handleDrawerOps = useCallback(() => {
