@@ -9,6 +9,7 @@ import {
   Wallet,
   AlertCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AlertCard } from "./shared/alert-card";
 import { DrawerStatus } from "./widgets/operator/drawer-status";
 import { RatesTicker } from "./widgets/operator/rates-ticker";
@@ -16,6 +17,7 @@ import { RecentTransactions } from "./widgets/operator/recent-transactions";
 import { useUser } from "@/lib/hooks/use-user";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { getUnresolvedAlerts } from "@/lib/queries/operator";
+import { createClient } from "@/utils/supabase/client";
 import type { ComplianceAlert } from "@/types";
 
 export function OperatorDashboard() {
@@ -62,6 +64,45 @@ export function OperatorDashboard() {
     }
   }, [user?.branch_id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`operator-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "operator_notifications",
+          filter: `operator_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const record = payload.new as {
+            type?: string;
+            message?: string;
+          };
+
+          const title =
+            record.type === "till_force_closed"
+              ? "Till force closed"
+              : record.type === "till_suspended"
+                ? "Till suspended"
+                : "Notification";
+
+          toast.message(title, {
+            description: record.message ?? "A supervisor updated your till session.",
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const handleAcknowledgeAlert = useCallback((alertId: string) => {
     // TODO: Implement alert acknowledgement
     console.log("Acknowledge alert:", alertId);
@@ -70,7 +111,7 @@ export function OperatorDashboard() {
   return (
       <div className="grid grid-rows-[auto_1fr] gap-6">
         {/* Primary Action Area (Top Deck) */}
-        <section className="grid grid-cols-12 gap-6 h-[220px]">
+        <section className="grid grid-cols-12 gap-6 h-55">
           {/* Sell Currency (GBP IN -> Foreign OUT) */}
           <button
             onClick={handleSellCurrency}

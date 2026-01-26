@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, ArrowRightLeft, Banknote, Coins } from "lucide-react";
@@ -21,13 +21,19 @@ function formatCurrency(amount: number): string {
 export function BranchSummary({ branchId }: BranchSummaryProps) {
   const [summary, setSummary] = useState<BranchSummaryType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     async function fetchSummary() {
-      setIsLoading(true);
+      if (initialLoadRef.current) {
+        setIsLoading(true);
+      }
       const data = await getBranchSummary(branchId);
       setSummary(data);
-      setIsLoading(false);
+      if (initialLoadRef.current) {
+        setIsLoading(false);
+        initialLoadRef.current = false;
+      }
     }
 
     fetchSummary();

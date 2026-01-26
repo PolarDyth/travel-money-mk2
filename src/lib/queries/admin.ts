@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/client";
 import type {
   TransactionAuditLog,
   StaffProfile,
-  ComplianceAlert,
   UserRole,
 } from "@/types";
 

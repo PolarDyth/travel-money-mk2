@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,13 +32,19 @@ type DrawerSessionAnalyticsProps = {
 export function DrawerSessionAnalytics({ branchId }: DrawerSessionAnalyticsProps) {
   const [analytics, setAnalytics] = useState<DrawerSessionAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     async function fetchAnalytics() {
-      setIsLoading(true);
+      if (initialLoadRef.current) {
+        setIsLoading(true);
+      }
       const data = await getDrawerSessionAnalytics(branchId);
       setAnalytics(data);
-      setIsLoading(false);
+      if (initialLoadRef.current) {
+        setIsLoading(false);
+        initialLoadRef.current = false;
+      }
     }
 
     fetchAnalytics();

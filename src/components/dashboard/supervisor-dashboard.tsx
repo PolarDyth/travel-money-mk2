@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function SupervisorDashboard() {
   const router = useRouter();
@@ -29,9 +30,12 @@ export function SupervisorDashboard() {
     router.push("/transactions/flagged");
   }, [router]);
 
-  const handleForceCloseTill = useCallback(() => {
-    router.push("/drawer/force-close");
-  }, [router]);
+  const handleForceCloseQuickAction = useCallback(() => {
+    toast.message("Select a till to force close", {
+      description: "Use the Till Status panel to choose a till and provide a reason.",
+    });
+  }, []);
+
 
   const handleViewReconciliation = useCallback(() => {
     router.push("/reconciliation");
@@ -93,7 +97,6 @@ export function SupervisorDashboard() {
                 <TillStatusGrid
                   branchId={user.branch_id}
                   onViewTill={handleViewTill}
-                  onForceClose={handleForceCloseTill}
                 />
                 <OperatorMetrics branchId={user.branch_id} />
               </>
@@ -135,7 +138,7 @@ export function SupervisorDashboard() {
             icon={<Settings className="w-5 h-5" />}
             label="Force-Close Till"
             description="Emergency till closure"
-            onClick={handleForceCloseTill}
+            onClick={handleForceCloseQuickAction}
             variant="warning"
           />
           <QuickActionButton

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,19 +52,29 @@ export function PendingAlerts({
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [acknowledging, setAcknowledging] = useState<string | null>(null);
+  const initialLoadRef = useRef(true);
 
   const fetchAlerts = useCallback(async () => {
+    if (initialLoadRef.current) {
+      setIsLoading(true);
+    }
     const data = await getPendingAlerts(branchId);
     setAlerts(data);
-    setIsLoading(false);
+    if (initialLoadRef.current) {
+      setIsLoading(false);
+      initialLoadRef.current = false;
+    }
   }, [branchId]);
 
   useEffect(() => {
-    fetchAlerts();
+    const timeout = setTimeout(fetchAlerts, 0);
 
     // Refresh every 30 seconds
     const interval = setInterval(fetchAlerts, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [fetchAlerts]);
 
   const handleAcknowledge = async (alertId: string) => {
@@ -128,7 +138,7 @@ export function PendingAlerts({
             <p className="text-xs text-zinc-500">No pending alerts</p>
           </div>
         ) : (
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="space-y-2 max-h-75 overflow-y-auto">
             {alerts.map((alert) => {
               const config = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.low;
               const isAcknowledging = acknowledging === alert.id;

@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/client";
 import type {
   DrawerSession,
   StaffProfile,
-  Transaction,
   ComplianceAlert,
 } from "@/types";
 
@@ -168,6 +167,7 @@ export async function getDrawerSessionAnalytics(
 
 export async function getTillStatus(branchId: string): Promise<TillWithOperator[]> {
   const supabase = createClient();
+  const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
   const { data, error } = await supabase
     .from("drawer_sessions")
@@ -178,7 +178,7 @@ export async function getTillStatus(branchId: string): Promise<TillWithOperator[
       )
     `)
     .eq("branch_id", branchId)
-    .gte("opened_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+    .or(`status.in.(open,suspended),opened_at.gte.${todayStart}`)
     .order("opened_at", { ascending: false });
 
   if (error) {
