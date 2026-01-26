@@ -544,6 +544,51 @@ export type Database = {
           },
         ]
       }
+      operator_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          operator_id: string
+          read_at: string | null
+          session_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          operator_id: string
+          read_at?: string | null
+          session_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          operator_id?: string
+          read_at?: string | null
+          session_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_notifications_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_notifications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "drawer_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_profiles: {
         Row: {
           branch_id: string

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import { SiteHeader } from "@/components/layout/site-header";
+import { Toaster } from "@/components/ui/sonner";
 import type { UserWithBranch } from "@/lib/hooks/use-user";
 
 const geistSans = Geist({
@@ -52,6 +53,7 @@ export default async function RootLayout({
         <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-8">
             {children}
         </main>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { TransactionWizard } from '@/components/operator/transaction/transaction-wizard';
-import { getCurrencies, getDailyRates } from '@/app/operator/transaction/actions';
+import { getCurrencies, getDailyRates } from '@/app/(dashboard)/operator/transaction/actions';
 import { createClient } from '@/utils/supabase/server';
 import { Loader2 } from 'lucide-react';
 

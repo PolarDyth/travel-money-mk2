@@ -41,12 +41,16 @@ export async function updateSession(request: NextRequest) {
   // STRICT AUTHENTICATION LOGIC
   
   // 1. If no user and asking for a protected route, redirect to login
-  if (!user && !request.nextUrl.pathname.startsWith('/login')
-       && !request.nextUrl.pathname.startsWith('/auth') // allow auth callbacks
-       && !request.nextUrl.pathname.startsWith('/forgot-password')
-      ) {
+  const pathname = request.nextUrl.pathname
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/forgot-password')
+
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 
@@ -54,7 +58,7 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     // Check if on login page, redirect to home/dashboard
     // But allow staying on login if there's an error (e.g. no_profile) to avoid redirect loops
-    if (request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.searchParams.has('error')) {
+     if (request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.searchParams.has('error')) {
        const url = request.nextUrl.clone()
        url.pathname = '/'
        return NextResponse.redirect(url)

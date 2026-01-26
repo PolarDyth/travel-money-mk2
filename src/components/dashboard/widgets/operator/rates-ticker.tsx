@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCurrentRates, type RateWithCurrency } from "@/lib/queries/operator";
 
@@ -45,22 +45,20 @@ type RateWithChange = RateWithCurrency & {
 
 export function RatesTicker({
   branchId,
-  refreshInterval = 60000,
+  refreshInterval = 10000,
 }: RatesTickerProps) {
   const [rates, setRates] = useState<RateWithChange[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [previousRates, setPreviousRates] = useState<Map<string, RateWithCurrency>>(
-    new Map()
-  );
+  const previousRatesRef = useRef<Map<string, RateWithCurrency>>(new Map());
 
-  const fetchRates = useCallback(async () => {
-    const newRates = await getCurrentRates(branchId);
+  useEffect(() => {
+    async function fetchRates() {
+      const newRates = await getCurrentRates(branchId);
 
     // Compare with previous rates to determine changes
     const ratesWithChanges: RateWithChange[] = newRates.map((rate) => {
-      const prevRate = previousRates.get(rate.currency_code);
+      const prevRate = previousRatesRef.current.get(rate.currency_code);
       let buyChange: RateChange = "neutral";
       let sellChange: RateChange = "neutral";
 
@@ -83,24 +81,30 @@ export function RatesTicker({
     // Store current rates as previous for next comparison
     const newPrevRates = new Map<string, RateWithCurrency>();
     newRates.forEach((rate) => newPrevRates.set(rate.currency_code, rate));
-    setPreviousRates(newPrevRates);
+    previousRatesRef.current = newPrevRates;
 
-    setRates(ratesWithChanges);
-    setLastUpdate(new Date());
-    setIsLoading(false);
-    setIsRefreshing(false);
-  }, [branchId, previousRates]);
+      const prev = previousRatesRef.current;
+      const didChange = newRates.some((rate) => {
+        const prevRate = prev.get(rate.currency_code);
+        return (
+          !prevRate ||
+          Number(prevRate.buy_rate) !== Number(rate.buy_rate) ||
+          Number(prevRate.sell_rate) !== Number(rate.sell_rate)
+        );
+      });
 
-  useEffect(() => {
+      if (didChange || isLoading) {
+        setRates(ratesWithChanges);
+        setLastUpdate(new Date());
+        setIsLoading(false);
+      }
+    }
+
     fetchRates();
 
-    const interval = setInterval(() => {
-      setIsRefreshing(true);
-      fetchRates();
-    }, refreshInterval);
-
+    const interval = setInterval(fetchRates, refreshInterval);
     return () => clearInterval(interval);
-  }, [fetchRates, refreshInterval]);
+  }, [branchId, refreshInterval, isLoading]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-GB", {
@@ -147,11 +151,7 @@ export function RatesTicker({
           Live Rates
         </h3>
         <span className="text-xs text-zinc-500 bg-zinc-100 px-2 py-1 border border-zinc-200 flex items-center gap-1">
-          {isRefreshing ? (
-            <RefreshCw className="w-3 h-3 animate-spin" />
-          ) : (
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          )}
+          <span className="w-2 h-2 rounded-full bg-green-500" />
           {lastUpdate ? `Updated ${formatTime(lastUpdate)}` : "Loading..."}
         </span>
       </div>

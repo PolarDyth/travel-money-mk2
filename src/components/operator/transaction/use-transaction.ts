@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { TransactionDraft } from '@/app/operator/transaction/actions';
+import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/actions';
 
 export type WizardStep = 'currency' | 'customer' | 'denominations' | 'review' | 'success';
 

@@ -8,10 +8,10 @@ import { StepCustomer } from './step-customer';
 import { StepDenominations } from './step-denominations';
 import { StepReview } from './step-review';
 import { StepSuccess } from './step-success';
-import { submitTransaction } from '@/app/operator/transaction/actions';
+import { submitTransaction } from '@/app/(dashboard)/operator/transaction/actions';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Currency, ExchangeRate, Denomination } from "@/app/operator/transaction/types";
+import { Currency, ExchangeRate, Denomination } from "@/app/(dashboard)/operator/transaction/types";
 
 interface TransactionWizardProps {
   currencies: Currency[];

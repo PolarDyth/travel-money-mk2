@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/client";
 import type {
   DrawerSession,
   StaffProfile,
-  Transaction,
   ComplianceAlert,
 } from "@/types";
 
@@ -31,8 +30,144 @@ export type OperatorMetric = {
   avgTransactionValue: number;
 };
 
+export type DrawerSessionAnalytics = {
+  summary: {
+    totalSessions: number;
+    openCount: number;
+    suspendedCount: number;
+    closedCount: number;
+    avgDurationMinutes: number;
+    avgOpenDurationMinutes: number;
+    totalVariance: number;
+  };
+  activeSessions: Array<
+    DrawerSession & {
+      operator: Pick<
+        StaffProfile,
+        "id" | "first_name" | "last_name" | "employee_number"
+      > | null;
+    }
+  >;
+};
+
+export async function getDrawerSessionAnalytics(
+  branchId: string
+): Promise<DrawerSessionAnalytics> {
+  const supabase = createClient();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const selectFields = `
+    id,
+    branch_id,
+    status,
+    opened_at,
+    closed_at,
+    till_number,
+    opening_float_gbp,
+    expected_float_gbp,
+    variance_gbp,
+    operator:staff_profiles!drawer_sessions_operator_id_fkey(
+      id, first_name, last_name, employee_number
+    )
+  `;
+
+  const [todayResult, activeResult] = await Promise.all([
+    supabase
+      .from("drawer_sessions")
+      .select(selectFields)
+      .eq("branch_id", branchId)
+      .gte("opened_at", today.toISOString())
+      .order("opened_at", { ascending: false }),
+    supabase
+      .from("drawer_sessions")
+      .select(selectFields)
+      .eq("branch_id", branchId)
+      .eq("status", "open")
+      .order("opened_at", { ascending: false }),
+  ]);
+
+  if (todayResult.error) {
+    console.error("Error fetching drawer session analytics:", todayResult.error);
+    return {
+      summary: {
+        totalSessions: 0,
+        openCount: 0,
+        suspendedCount: 0,
+        closedCount: 0,
+        avgDurationMinutes: 0,
+        avgOpenDurationMinutes: 0,
+        totalVariance: 0,
+      },
+      activeSessions: [],
+    };
+  }
+
+  const todaySessions =
+    (todayResult.data ?? []) as DrawerSessionAnalytics["activeSessions"];
+  const activeSessions =
+    (activeResult.data ?? []) as DrawerSessionAnalytics["activeSessions"];
+  const now = Date.now();
+
+  let totalDurationMinutes = 0;
+  let durationCount = 0;
+  let suspendedCount = 0;
+  let closedCount = 0;
+  let totalVariance = 0;
+
+  for (const session of todaySessions) {
+    const openedAt = new Date(session.opened_at).getTime();
+    const closedAt = session.closed_at
+      ? new Date(session.closed_at).getTime()
+      : now;
+    const durationMinutes = Math.max(
+      0,
+      Math.round((closedAt - openedAt) / 60000)
+    );
+
+    totalDurationMinutes += durationMinutes;
+    durationCount += 1;
+
+    if (session.status === "suspended") {
+      suspendedCount += 1;
+    }
+
+    if (session.status === "closed") {
+      closedCount += 1;
+    }
+
+    totalVariance += Number(session.variance_gbp ?? 0);
+  }
+
+  const avgDurationMinutes =
+    durationCount > 0 ? totalDurationMinutes / durationCount : 0;
+
+  const openCount = activeSessions.length;
+  const avgOpenDurationMinutes =
+    openCount > 0
+      ? activeSessions.reduce((sum, session) => {
+          const openedAt = new Date(session.opened_at).getTime();
+          return sum + Math.max(0, (now - openedAt) / 60000);
+        }, 0) / openCount
+      : 0;
+
+  return {
+    summary: {
+      totalSessions: todaySessions.length,
+      openCount,
+      suspendedCount,
+      closedCount,
+      avgDurationMinutes,
+      avgOpenDurationMinutes,
+      totalVariance,
+    },
+    activeSessions,
+  };
+}
+
 export async function getTillStatus(branchId: string): Promise<TillWithOperator[]> {
   const supabase = createClient();
+  const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
   const { data, error } = await supabase
     .from("drawer_sessions")
@@ -43,7 +178,7 @@ export async function getTillStatus(branchId: string): Promise<TillWithOperator[
       )
     `)
     .eq("branch_id", branchId)
-    .gte("opened_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+    .or(`status.in.(open,suspended),opened_at.gte.${todayStart}`)
     .order("opened_at", { ascending: false });
 
   if (error) {
@@ -122,7 +257,9 @@ export async function getBranchSummary(branchId: string): Promise<BranchSummary>
   return { ...summary, yesterdayTotal };
 }
 
-export async function getOperatorMetrics(branchId: string): Promise<OperatorMetric[]> {
+export async function getOperatorMetrics(
+  branchId: string
+): Promise<OperatorMetric[]> {
   const supabase = createClient();
 
   const today = new Date();

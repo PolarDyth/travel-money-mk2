@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Settings, ChevronDown } from "lucide-react";
+import { LogOut, Settings, ChevronDown, LayoutDashboard, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { UserWithBranch } from "@/lib/hooks/use-user";
+import { ROLE_HIERARCHY, USER_ROLES, type UserRole } from "@/types";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -22,11 +25,44 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ user }: SiteHeaderProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const isAuthRoute =
+    pathname === "/" ? !user : pathname.startsWith("/login") || pathname.startsWith("/forgot-password") || pathname.startsWith("/auth");
+
+  if (isAuthRoute) {
+    return null;
+  }
+
+  const availableRoles = user?.role
+    ? USER_ROLES
+        .filter((role) => ROLE_HIERARCHY[role] <= ROLE_HIERARCHY[user.role])
+        .sort((a, b) => ROLE_HIERARCHY[b] - ROLE_HIERARCHY[a])
+    : [];
+
+  const requestedRole = searchParams.get("view") as UserRole | null;
+  const activeRole =
+    requestedRole && availableRoles.includes(requestedRole)
+      ? requestedRole
+      : user?.role ?? null;
+
+  const handleSwitchDashboard = (role: UserRole) => {
+    const target = role === user?.role ? "/" : `/?view=${role}`;
+    router.push(target);
+  };
 
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
+  };
+
+  const roleLabels: Record<UserRole, string> = {
+    admin: "Admin Dashboard",
+    manager: "Manager Dashboard",
+    supervisor: "Supervisor Dashboard",
+    operator: "Operator Dashboard",
   };
 
   return (
@@ -74,6 +110,29 @@ export function SiteHeader({ user }: SiteHeaderProps) {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  {availableRoles.length > 1 && (
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Switch Dashboard</DropdownMenuLabel>
+                      {availableRoles.map((role) => {
+                        const isActive = role === activeRole;
+                        return (
+                          <DropdownMenuItem
+                            key={role}
+                            onSelect={() => handleSwitchDashboard(role)}
+                            disabled={isActive}
+                          >
+                            {isActive ? (
+                              <Check className="mr-2 h-4 w-4" />
+                            ) : (
+                              <LayoutDashboard className="mr-2 h-4 w-4" />
+                            )}
+                            <span>{roleLabels[role]}</span>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                      <DropdownMenuSeparator />
+                    </DropdownMenuGroup>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
                         <Settings className="mr-2 h-4 w-4" />
@@ -88,7 +147,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
               </DropdownMenu>
             </div>
           ) : (
-            <Link href="/login">
+            <Link href="/">
                <Button variant="ghost" size="sm">Login</Button>
             </Link>
           )}

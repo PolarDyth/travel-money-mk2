@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/client";
 import type {
   TransactionAuditLog,
   StaffProfile,
-  ComplianceAlert,
   UserRole,
 } from "@/types";
 
@@ -42,6 +41,7 @@ export type StaffCounts = {
   inactive: number;
   recentLogins: number;
 };
+
 
 export async function getSystemHealth(): Promise<SystemHealthStats> {
   const supabase = createClient();
@@ -87,6 +87,7 @@ export async function getSystemHealth(): Promise<SystemHealthStats> {
     errorCount24h: 0, // Would come from Sentry or error logging
   };
 }
+
 
 export async function getAuditTrail(
   limit: number = 50,

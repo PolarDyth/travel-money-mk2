@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
-import { TransactionDraft } from '@/app/operator/transaction/actions';
-import { TransactionUpdateHandler } from '@/app/operator/transaction/types';
+import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/actions';
+import { TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepReviewProps {
   data: TransactionDraft;

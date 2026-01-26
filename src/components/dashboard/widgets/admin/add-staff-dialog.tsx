@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Plus, Loader2 } from 'lucide-react'
-import { createStaffMember, type CreateStaffState } from '@/app/admin/actions'
+import { createStaffMember, type CreateStaffState } from '@/app/(dashboard)/admin/actions'
 import { getBranches, type BranchOption } from '@/lib/queries/admin'
 
 const initialState: CreateStaffState = {}

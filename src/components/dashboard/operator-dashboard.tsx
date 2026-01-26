@@ -9,6 +9,15 @@ import {
   Wallet,
   AlertCircle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AlertCard } from "./shared/alert-card";
 import { DrawerStatus } from "./widgets/operator/drawer-status";
 import { RatesTicker } from "./widgets/operator/rates-ticker";
@@ -16,12 +25,19 @@ import { RecentTransactions } from "./widgets/operator/recent-transactions";
 import { useUser } from "@/lib/hooks/use-user";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { getUnresolvedAlerts } from "@/lib/queries/operator";
+import { createClient } from "@/utils/supabase/client";
 import type { ComplianceAlert } from "@/types";
 
 export function OperatorDashboard() {
   const router = useRouter();
   const { user, isLoading } = useUser();
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState<
+    "till_force_closed" | "till_suspended" | "other"
+  >("other");
 
   // Navigation handlers
   const handleSellCurrency = useCallback(() => {
@@ -62,6 +78,54 @@ export function OperatorDashboard() {
     }
   }, [user?.branch_id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`operator-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "operator_notifications",
+          filter: `operator_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const record = payload.new as {
+            type?: string;
+            message?: string;
+          };
+
+          const type =
+            record.type === "till_force_closed"
+              ? "till_force_closed"
+              : record.type === "till_suspended"
+                ? "till_suspended"
+                : "other";
+          const title =
+            type === "till_force_closed"
+              ? "Till force closed"
+              : type === "till_suspended"
+                ? "Till suspended"
+                : "Notification";
+
+          setNotificationType(type);
+          setNotificationTitle(title);
+          setNotificationMessage(
+            record.message ?? "A supervisor updated your till session."
+          );
+          setNotificationOpen(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const handleAcknowledgeAlert = useCallback((alertId: string) => {
     // TODO: Implement alert acknowledgement
     console.log("Acknowledge alert:", alertId);
@@ -69,8 +133,55 @@ export function OperatorDashboard() {
 
   return (
       <div className="grid grid-rows-[auto_1fr] gap-6">
+        <Dialog open={notificationOpen} onOpenChange={setNotificationOpen}>
+          <DialogContent className="max-w-xl rounded-none p-0">
+            <div className="flex w-full flex-col bg-white">
+              <div className="px-8 py-10">
+                <DialogHeader>
+                  <DialogTitle className="text-3xl font-bold text-black">
+                    {notificationTitle}
+                  </DialogTitle>
+                  <DialogDescription className="text-base text-zinc-600 mt-2">
+                    {notificationMessage}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {notificationType !== "other" && (
+                  <div className="mt-8 rounded-none border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    Transactions are paused for this till until a supervisor resolves
+                    the session. Please notify your supervisor if this is unexpected.
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="border-t border-zinc-200 px-8 py-5">
+                <Button
+                  variant="outline"
+                  className="rounded-none"
+                  onClick={() => setNotificationOpen(false)}
+                >
+                  Acknowledge
+                </Button>
+                <Button
+                  className="rounded-none"
+                  variant={
+                    notificationType === "till_force_closed"
+                      ? "destructive"
+                      : "default"
+                  }
+                  onClick={() => {
+                    setNotificationOpen(false);
+                    router.push("/operator/drawer");
+                  }}
+                >
+                  Go to Drawer Status
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
         {/* Primary Action Area (Top Deck) */}
-        <section className="grid grid-cols-12 gap-6 h-[220px]">
+        <section className="grid grid-cols-12 gap-6 h-55">
           {/* Sell Currency (GBP IN -> Foreign OUT) */}
           <button
             onClick={handleSellCurrency}

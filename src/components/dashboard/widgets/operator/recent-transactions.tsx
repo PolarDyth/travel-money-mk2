@@ -79,10 +79,18 @@ export function RecentTransactions({
     [branchId]
   );
 
-  useEffect(() => {
+  const loadInitialTransactions = useCallback(async () => {
     setIsLoading(true);
-    fetchTransactions().finally(() => setIsLoading(false));
+    try {
+      await fetchTransactions();
+    } finally {
+      setIsLoading(false);
+    }
   }, [fetchTransactions]);
+
+  useEffect(() => {
+    void loadInitialTransactions();
+  }, [loadInitialTransactions]);
 
   const handleLoadMore = async () => {
     setIsLoadingMore(true);
@@ -128,7 +136,7 @@ export function RecentTransactions({
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-8 w-20" />
         </div>
-        <Skeleton className="flex-1 min-h-[200px]" />
+        <Skeleton className="flex-1 min-h-50" />
       </div>
     );
   }

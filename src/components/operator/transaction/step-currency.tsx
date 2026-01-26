@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon, ArrowLeftRight } from "lucide-react";
-import { Currency, TransactionUpdateHandler } from '@/app/operator/transaction/types';
+import { Currency, TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepCurrencyProps {
   type: 'buy' | 'sell';

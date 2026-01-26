@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -28,13 +28,19 @@ function getVoidRateStatus(rate: number): "good" | "warning" | "error" {
 export function OperatorMetrics({ branchId }: OperatorMetricsProps) {
   const [metrics, setMetrics] = useState<OperatorMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     async function fetchMetrics() {
-      setIsLoading(true);
+      if (initialLoadRef.current) {
+        setIsLoading(true);
+      }
       const data = await getOperatorMetrics(branchId);
       setMetrics(data);
-      setIsLoading(false);
+      if (initialLoadRef.current) {
+        setIsLoading(false);
+        initialLoadRef.current = false;
+      }
     }
 
     fetchMetrics();
