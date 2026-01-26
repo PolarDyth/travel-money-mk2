@@ -1,12 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { DrawerManager } from "@/components/operator/drawer/drawer-manager";
-import { 
-  getDenominationsServer, 
-  getExchangeRatesServer, 
-  getActiveDrawerSessionServer,
-  getDrawerSummaryServer 
-} from "@/lib/queries/drawer-server";
+import { getActiveDrawerSession, getDenominations, getDrawerSummary, getExchangeRates } from "@/lib/queries/drawer";
 
 export default async function DrawerPage() {
   const supabase = await createClient();
@@ -31,14 +26,14 @@ export default async function DrawerPage() {
 
   // Parallel fetch: session and static data
   const [denominations, exchangeRates, activeSession] = await Promise.all([
-    getDenominationsServer(),
-    getExchangeRatesServer(),
-    getActiveDrawerSessionServer(user.id),
+    getDenominations(),
+    getExchangeRates(),
+    getActiveDrawerSession(user.id),
   ]);
 
   let drawerSummary = null;
   if (activeSession) {
-    drawerSummary = await getDrawerSummaryServer(activeSession.id);
+    drawerSummary = await getDrawerSummary(activeSession.id);
   }
 
   return (

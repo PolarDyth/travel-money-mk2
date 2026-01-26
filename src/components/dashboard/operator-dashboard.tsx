@@ -18,14 +18,10 @@ import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { getUnresolvedAlerts } from "@/lib/queries/operator";
 import type { ComplianceAlert } from "@/types";
 
-// Mock data for when user is not loaded or for development
-const MOCK_DRAWER_BALANCE = 5420.5;
-
 export function OperatorDashboard() {
   const router = useRouter();
   const { user, isLoading } = useUser();
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
-  const [drawerBalance, _setDrawerBalance] = useState(MOCK_DRAWER_BALANCE);
 
   // Navigation handlers
   const handleSellCurrency = useCallback(() => {

@@ -23,7 +23,7 @@ import {
 import { History, ChevronDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRecentTransactions, voidTransaction } from "@/lib/queries/operator";
-import type { Transaction, TransactionType } from "@/types";
+import type { Transaction } from "@/types";
 
 type RecentTransactionsProps = {
   branchId: string;

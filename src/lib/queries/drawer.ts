@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/server";
 import type { CurrencyDenomination, Transaction } from "@/types";
 
 export type DenominationWithCurrency = CurrencyDenomination & {
@@ -19,7 +19,7 @@ export type DrawerSummary = {
 };
 
 export async function getDenominations(): Promise<DenominationWithCurrency[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("currency_denominations")
     .select(`
@@ -43,12 +43,11 @@ export async function getDenominations(): Promise<DenominationWithCurrency[]> {
 }
 
 export async function getExchangeRates(): Promise<Record<string, number>> {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: rates } = await supabase
         .from('exchange_rates')
         .select('currency_code, buy_rate, sell_rate')
-        .is('effective_until', null); // Assuming current rates have effective_until = null based on typical patterns, or check latest.
-        // Actually schema scan earlier showed effective_until.
+        .is('effective_until', null); 
     
     const map: Record<string, number> = {};
     if (rates) {
@@ -59,13 +58,26 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
     return map;
 }
 
+export async function getActiveDrawerSession(operatorId: string) {
+    const supabase = await createClient();
+    const { data } = await supabase
+        .from("drawer_sessions")
+        .select("*")
+        .eq("operator_id", operatorId)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    return data;
+}
+
 export async function getDrawerSummary(sessionId: string): Promise<DrawerSummary | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: session } = await supabase.from('drawer_sessions').select('*').eq('id', sessionId).single();
   if (!session) return null;
 
-  const { data: openingCounts, error: countError } = await supabase
+  const { data: openingCounts } = await supabase
     .from('drawer_denomination_counts')
     .select(`
         quantity,
@@ -87,7 +99,9 @@ export async function getDrawerSummary(sessionId: string): Promise<DrawerSummary
   let expectedGbp = 0;
 
   if (openingCounts) {
-      openingCounts.forEach((c: any) => {
+      openingCounts.forEach((c) => {
+        if (!c.denomination) return;
+
         const code = c.denomination.currency_code;
         const val = c.quantity * c.denomination.value;
         
