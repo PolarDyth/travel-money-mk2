@@ -10,7 +10,7 @@ export default async function DrawerPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/");
   }
 
   // Fetch staff profile to get branch_id

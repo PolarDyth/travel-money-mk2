@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { calculateOptimalDenominations } from '@/lib/transaction-utils';
-import { Denomination, TransactionUpdateHandler } from '@/app/operator/transaction/types';
+import { Denomination, TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepDenominationsProps {
   amount: number;

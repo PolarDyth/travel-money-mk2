@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Printer } from "lucide-react";
-import { TransactionDraft } from '@/app/operator/transaction/actions';
+import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/actions';
 
 interface StepSuccessProps {
   data: TransactionDraft;

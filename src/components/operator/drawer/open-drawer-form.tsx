@@ -6,7 +6,7 @@ import { DenominationWithCurrency } from '@/lib/queries/drawer';
 import { MultiCurrencyCounter } from './multi-currency-counter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { openDrawerSession } from '@/app/operator/drawer/actions';
+import { openDrawerSession } from '@/app/(dashboard)/operator/drawer/actions';
 import { toast } from 'sonner';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

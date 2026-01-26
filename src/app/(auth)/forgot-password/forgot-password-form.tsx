@@ -1,12 +1,12 @@
 'use client'
 
 import { useActionState } from 'react'
-import { requestPasswordReset } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { requestPasswordReset } from '../auth/actions'
 
 const initialState = {
   error: '',
@@ -27,7 +27,7 @@ export function ForgotPasswordForm() {
             <p className="text-sm text-muted-foreground">{state.success}</p>
         </div>
         <Button asChild className="w-full">
-          <Link href="/login">Return to Login</Link>
+          <Link href="/">Return to Login</Link>
         </Button>
       </div>
     )
@@ -63,7 +63,7 @@ export function ForgotPasswordForm() {
       </Button>
 
       <div className="text-center">
-        <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline">
+        <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline">
           Cancel & Return to Login
         </Link>
       </div>

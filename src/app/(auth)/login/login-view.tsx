@@ -1,22 +1,36 @@
-import { LoginForm } from './login-form'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ShieldCheck, AlertCircle } from 'lucide-react'
+import { LoginForm } from "./login-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, ShieldCheck } from "lucide-react";
 
-type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+type LoginViewProps = {
+  error?: string | string[];
+};
 
-export default async function LoginPage(props: {
-  searchParams: SearchParams
-}) {
-  const searchParams = await props.searchParams
-  const error = searchParams.error
+const getErrorMessage = (error?: string | string[]) => {
+  if (!error) return "";
+  const value = Array.isArray(error) ? error[0] : error;
 
-  let errorMessage = ''
-  if (error === 'no_profile') {
-    errorMessage = 'Your account exists but has no active staff profile. Please contact your manager.'
-  } else if (error) {
-    errorMessage = Array.isArray(error) ? error[0] : error
+  if (value === "no_profile") {
+    return "Your account exists but has no active staff profile. Please contact your manager.";
   }
+
+  if (value === "inactive") {
+    return "Your account is inactive. Please contact your manager.";
+  }
+
+  return value;
+};
+
+export function LoginView({ error }: LoginViewProps) {
+  const errorMessage = getErrorMessage(error);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-secondary/30 p-4">
@@ -39,9 +53,7 @@ export default async function LoginPage(props: {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Access Denied</AlertTitle>
-              <AlertDescription>
-                {errorMessage}
-              </AlertDescription>
+              <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
           <LoginForm />
@@ -53,5 +65,5 @@ export default async function LoginPage(props: {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

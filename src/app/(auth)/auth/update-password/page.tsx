@@ -9,7 +9,7 @@ export default async function UpdatePasswordPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   return (

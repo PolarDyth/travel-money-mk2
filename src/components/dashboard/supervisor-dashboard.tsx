@@ -7,6 +7,7 @@ import { TillStatusGrid } from "./widgets/supervisor/till-status-grid";
 import { BranchSummary } from "./widgets/supervisor/branch-summary";
 import { OperatorMetrics } from "./widgets/supervisor/operator-metrics";
 import { PendingAlerts } from "./widgets/supervisor/pending-alerts";
+import { DrawerSessionAnalytics } from "./widgets/supervisor/drawer-session-analytics";
 import { useUser } from "@/lib/hooks/use-user";
 import {
   Settings,
@@ -88,6 +89,7 @@ export function SupervisorDashboard() {
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {user?.branch_id && (
               <>
+                <DrawerSessionAnalytics branchId={user.branch_id} />
                 <TillStatusGrid
                   branchId={user.branch_id}
                   onViewTill={handleViewTill}
