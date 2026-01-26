@@ -9,11 +9,15 @@ import { StaffDirectory } from "./widgets/admin/staff-directory";
 import { getSystemHealth, type SystemHealthStats } from "@/lib/queries/admin";
 import { Monitor, AlertTriangle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/lib/hooks/use-user";
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<SystemHealthStats | null>(null);
+  const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
+    if (isUserLoading || !user) return;
+
     async function fetchStats() {
       const data = await getSystemHealth();
       setStats(data);
@@ -22,7 +26,7 @@ export function AdminDashboard() {
     fetchStats();
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isUserLoading, user?.id, user]);
 
   const formatLastSync = (dateStr: string | null) => {
     if (!dateStr) return "Never";
@@ -78,6 +82,11 @@ export function AdminDashboard() {
           <p className="text-sm text-zinc-500">
             System monitoring and administration
           </p>
+          {user && user.role !== "admin" && (
+            <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 inline-block">
+              You are signed in as {user.role}. Admin stats are limited by RLS.
+            </div>
+          )}
         </div>
 
         {/* Main Grid */}
