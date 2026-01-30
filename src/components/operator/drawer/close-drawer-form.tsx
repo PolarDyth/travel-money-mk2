@@ -10,6 +10,7 @@ import { AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { DenominationCount } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/types/response';
 
 interface CloseDrawerFormProps {
   session: DrawerSummary;
@@ -35,7 +36,7 @@ export function CloseDrawerForm({ session, denominations, exchangeRates, onCance
   const handleSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
-    
+
     try {
       const result = await closeDrawerSession({
         session_id: session.sessionId,
@@ -45,7 +46,7 @@ export function CloseDrawerForm({ session, denominations, exchangeRates, onCance
       });
 
       if (result.error) {
-        setError(result.error);
+        setError(getErrorMessage(result.error));
         return;
       }
       // Success handled by revalidate

@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
-import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/actions';
+import { Loader2, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/schemas';
 import { TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepReviewProps {
@@ -33,6 +34,24 @@ export function StepReview({
         </CardHeader>
         <CardContent className="space-y-6">
             
+            {data.rate_override && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Rate Override Applied</strong>
+                  <span className="block mt-1">
+                    Original: {data.rate_override.original_rate.toFixed(6)} → 
+                    Override: {data.rate_override.override_rate.toFixed(6)}
+                  </span>
+                  {data.rate_override.reason && (
+                    <span className="block mt-1 text-sm">
+                      Reason: {data.rate_override.reason}
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="rounded-md border">
                 <Table>
                     <TableBody>
@@ -45,8 +64,22 @@ export function StepReview({
                             <TableCell className="text-right font-mono">{data.foreign_amount.toFixed(2)}</TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell className="font-medium">Rate</TableCell>
-                            <TableCell className="text-right font-mono">{data.exchange_rate.toFixed(4)}</TableCell>
+                            <TableCell className="font-medium">
+                                Rate
+                                {data.rate_override && (
+                                  <span className="ml-2 text-destructive text-sm">
+                                    (Override)
+                                  </span>
+                                )}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                                {data.exchange_rate.toFixed(4)}
+                                {data.rate_override && (
+                                  <span className="ml-2 text-destructive">
+                                    was {data.rate_override.original_rate.toFixed(4)}
+                                  </span>
+                                )}
+                            </TableCell>
                         </TableRow>
                         <TableRow className="bg-muted/50">
                             <TableCell className="font-medium">Total GBP</TableCell>

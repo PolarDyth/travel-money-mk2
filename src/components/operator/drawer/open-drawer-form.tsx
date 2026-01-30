@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { DenominationWithCurrency } from '@/lib/queries/drawer';
 import { MultiCurrencyCounter } from './multi-currency-counter';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { toast } from 'sonner';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { DenominationCount } from '@/types';
+import { getErrorMessage } from '@/lib/types/response';
 
 interface OpenDrawerFormProps {
   denominations: DenominationWithCurrency[];
@@ -32,10 +32,10 @@ export function OpenDrawerForm({ denominations, exchangeRates, branchId }: OpenD
   const handleSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
-    
+
     try {
       // Logic for client-side validation could go here (e.g. minimum float check)
-      
+
       const result = await openDrawerSession({
         counts,
         total_gbp: totalGbp,
@@ -43,10 +43,10 @@ export function OpenDrawerForm({ denominations, exchangeRates, branchId }: OpenD
       });
 
       if (result.error) {
-        setError(result.error);
+        setError(getErrorMessage(result.error));
         return;
       }
-      
+
       // router.refresh(); // Handled by action revalidatePath
       toast.success('Drawer session opened successfully');
     } catch (e) {

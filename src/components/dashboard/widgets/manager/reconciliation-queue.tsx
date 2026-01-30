@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,10 +42,14 @@ export function ReconciliationQueue({
   const [isLoading, setIsLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
 
+  const [, startTransition] = useTransition();
+
   const fetchData = useCallback(async () => {
     const data = await getPendingReconciliations();
-    setItems(data);
-    setIsLoading(false);
+    startTransition(() => {
+      setItems(data);
+      setIsLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -53,7 +57,7 @@ export function ReconciliationQueue({
 
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, setIsLoading]);
 
   const handleApprove = async (id: string) => {
     setApproving(id);

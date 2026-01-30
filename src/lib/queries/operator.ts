@@ -6,6 +6,7 @@ import type {
   Currency,
   ComplianceAlert,
 } from "@/types";
+import { QueryResult } from "@/lib/types/response";
 
 export type RateWithCurrency = ExchangeRate & {
   currency: Currency;
@@ -19,7 +20,7 @@ export type DrawerSessionWithCounts = DrawerSession & {
 
 export async function getActiveDrawerSession(
   operatorId: string
-): Promise<DrawerSession | null> {
+): Promise<QueryResult<DrawerSession>> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -32,18 +33,23 @@ export async function getActiveDrawerSession(
     .maybeSingle();
 
   if (error) {
-    console.error("Error fetching drawer session:", error);
-    return null;
+    return {
+      data: null,
+      error: new Error(error.message)
+    };
   }
 
-  return data;
+  return {
+    data,
+    error: null
+  };
 }
 
 export async function getRecentTransactions(
   branchId: string,
   limit: number = 5,
   offset: number = 0
-): Promise<{ transactions: Transaction[]; hasMore: boolean }> {
+): Promise<QueryResult<{ transactions: Transaction[]; hasMore: boolean }>> {
   const supabase = createClient();
 
   const { data, error, count } = await supabase
@@ -54,19 +60,24 @@ export async function getRecentTransactions(
     .range(offset, offset + limit);
 
   if (error) {
-    console.error("Error fetching transactions:", error);
-    return { transactions: [], hasMore: false };
+    return {
+      data: null,
+      error: new Error(error.message)
+    };
   }
 
   return {
-    transactions: data ?? [],
-    hasMore: (count ?? 0) > offset + limit + 1,
+    data: {
+      transactions: data ?? [],
+      hasMore: (count ?? 0) > offset + limit + 1,
+    },
+    error: null
   };
 }
 
 export async function getCurrentRates(
   branchId?: string
-): Promise<RateWithCurrency[]> {
+): Promise<QueryResult<RateWithCurrency[]>> {
   const supabase = createClient();
 
   // Get global rates and any branch-specific overrides
@@ -92,8 +103,10 @@ export async function getCurrentRates(
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching rates:", error);
-    return [];
+    return {
+      data: null,
+      error: new Error(error.message)
+    };
   }
 
   // If there's a branch override, use it instead of the global rate
@@ -106,12 +119,15 @@ export async function getCurrentRates(
     }
   }
 
-  return Array.from(rateMap.values());
+  return {
+    data: Array.from(rateMap.values()),
+    error: null
+  };
 }
 
 export async function getUnresolvedAlerts(
   branchId: string
-): Promise<ComplianceAlert[]> {
+): Promise<QueryResult<ComplianceAlert[]>> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -123,11 +139,16 @@ export async function getUnresolvedAlerts(
     .limit(5);
 
   if (error) {
-    console.error("Error fetching alerts:", error);
-    return [];
+    return {
+      data: null,
+      error: new Error(error.message)
+    };
   }
 
-  return data ?? [];
+  return {
+    data: data ?? [],
+    error: null
+  };
 }
 
 export async function voidTransaction(
@@ -167,7 +188,7 @@ export async function voidTransaction(
 
 export async function getSessionStats(
   sessionId: string
-): Promise<{ transactionCount: number; totalBuyVolume: number; totalSellVolume: number }> {
+): Promise<QueryResult<{ transactionCount: number; totalBuyVolume: number; totalSellVolume: number }>> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -177,8 +198,10 @@ export async function getSessionStats(
     .eq("status", "completed");
 
   if (error) {
-    console.error("Error fetching session stats:", error);
-    return { transactionCount: 0, totalBuyVolume: 0, totalSellVolume: 0 };
+    return {
+      data: null,
+      error: new Error(error.message)
+    };
   }
 
   const stats = (data ?? []).reduce(
@@ -194,5 +217,8 @@ export async function getSessionStats(
     { transactionCount: 0, totalBuyVolume: 0, totalSellVolume: 0 }
   );
 
-  return stats;
+  return {
+    data: stats,
+    error: null
+  };
 }

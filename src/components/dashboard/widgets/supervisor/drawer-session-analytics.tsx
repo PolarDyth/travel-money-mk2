@@ -32,6 +32,7 @@ type DrawerSessionAnalyticsProps = {
 export function DrawerSessionAnalytics({ branchId }: DrawerSessionAnalyticsProps) {
   const [analytics, setAnalytics] = useState<DrawerSessionAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
   const initialLoadRef = useRef(true);
 
   useEffect(() => {
@@ -51,6 +52,12 @@ export function DrawerSessionAnalytics({ branchId }: DrawerSessionAnalyticsProps
     const interval = setInterval(fetchAnalytics, 30000);
     return () => clearInterval(interval);
   }, [branchId]);
+
+  // Update `now` every second for duration calculations
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (isLoading) {
     return (
@@ -127,7 +134,7 @@ export function DrawerSessionAnalytics({ branchId }: DrawerSessionAnalyticsProps
                         {formatDuration(
                           Math.max(
                             0,
-                            (Date.now() - new Date(session.opened_at).getTime()) / 60000
+                            (now - new Date(session.opened_at).getTime()) / 60000
                           )
                         )}
                       </div>

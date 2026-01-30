@@ -13,6 +13,8 @@ export type Currency = Database['public']['Tables']['currencies']['Row']
 export type CurrencyDenomination = Database['public']['Tables']['currency_denominations']['Row']
 export type ExchangeRate = Database['public']['Tables']['exchange_rates']['Row']
 export type ExchangeRateHistory = Database['public']['Tables']['exchange_rate_history']['Row']
+export type ExchangeRateSettings = Database['public']['Tables']['exchange_rate_settings']['Row']
+export type RateOverrideHistory = Database['public']['Tables']['rate_override_history']['Row']
 export type DrawerSession = Database['public']['Tables']['drawer_sessions']['Row']
 export type DrawerDenominationCount = Database['public']['Tables']['drawer_denomination_counts']['Row']
 export type Transaction = Database['public']['Tables']['transactions']['Row']
@@ -29,6 +31,8 @@ export type StaffProfileInsert = Database['public']['Tables']['staff_profiles'][
 export type CurrencyInsert = Database['public']['Tables']['currencies']['Insert']
 export type CurrencyDenominationInsert = Database['public']['Tables']['currency_denominations']['Insert']
 export type ExchangeRateInsert = Database['public']['Tables']['exchange_rates']['Insert']
+export type ExchangeRateSettingsInsert = Database['public']['Tables']['exchange_rate_settings']['Insert']
+export type RateOverrideHistoryInsert = Database['public']['Tables']['rate_override_history']['Insert']
 export type DrawerSessionInsert = Database['public']['Tables']['drawer_sessions']['Insert']
 export type DrawerDenominationCountInsert = Database['public']['Tables']['drawer_denomination_counts']['Insert']
 export type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
@@ -44,6 +48,8 @@ export type StaffProfileUpdate = Database['public']['Tables']['staff_profiles'][
 export type CurrencyUpdate = Database['public']['Tables']['currencies']['Update']
 export type CurrencyDenominationUpdate = Database['public']['Tables']['currency_denominations']['Update']
 export type ExchangeRateUpdate = Database['public']['Tables']['exchange_rates']['Update']
+export type ExchangeRateSettingsUpdate = Database['public']['Tables']['exchange_rate_settings']['Update']
+export type RateOverrideHistoryUpdate = Database['public']['Tables']['rate_override_history']['Update']
 export type DrawerSessionUpdate = Database['public']['Tables']['drawer_sessions']['Update']
 export type DrawerDenominationCountUpdate = Database['public']['Tables']['drawer_denomination_counts']['Update']
 export type TransactionUpdate = Database['public']['Tables']['transactions']['Update']
@@ -89,3 +95,23 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export function hasRoleOrHigher(currentRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[currentRole] >= ROLE_HIERARCHY[requiredRole]
 }
+
+// ============================================
+// Currency Editing Feature Types
+// ============================================
+export type {
+  RateOverrideData,
+  RateOverrideSource,
+  TransactionWithOverride,
+  BranchCurrencySettings,
+  RateOverrideHistoryWithDetails,
+  RateOverrideInput,
+  BranchRateInput,
+  CurrencySettingsInput,
+  DenominationInput,
+  CurrencyInput,
+  BranchCurrencySettingsResponse,
+  RateOverrideHistoryResponse,
+  CurrencyManagementData,
+  OverrideComplianceMetrics,
+} from '@/lib/types/currency-editing'

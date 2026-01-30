@@ -3,7 +3,19 @@ import type {
   TransactionAuditLog,
   StaffProfile,
   UserRole,
+  RateOverrideHistory,
+  Branch,
+  Transaction,
 } from "@/types";
+import type { RateOverrideHistoryWithDetails, OverrideComplianceMetrics } from "@/lib/types/currency-editing";
+
+// Type for the joined query result from rate_override_history
+type RateOverrideHistoryJoinResult = RateOverrideHistory & {
+  transaction: Pick<Transaction, "reference_number" | "created_at" | "branch_id" | "foreign_currency_code"> & {
+    branch: Pick<Branch, "id" | "name" | "code">;
+  };
+  approved_by: Pick<StaffProfile, "first_name" | "last_name" | "role">;
+};
 
 export type SystemHealthStats = {
   activeTills: number;
@@ -303,3 +315,336 @@ export async function getBranches(): Promise<BranchOption[]> {
 
   return data ?? [];
 }
+
+/**
+ * Get all currencies with their status and branch settings
+ */
+export async function getAllCurrencies(): Promise<CurrencyManagementData> {
+  const supabase = createClient();
+  
+  const { data: currencies, error } = await supabase
+    .from("currencies")
+    .select(`
+      code,
+      name,
+      symbol,
+      is_active,
+      decimal_places,
+      min_transaction_amount,
+      max_transaction_amount,
+      requires_id_threshold
+    `)
+    .order("name");
+
+  if (error) {
+    console.error("Error fetching currencies:", error);
+    return { currencies: [] };
+  }
+
+  return {
+    currencies: (currencies ?? []).map((c) => ({
+      code: c.code,
+      name: c.name,
+      symbol: c.symbol,
+      is_active: c.is_active,
+      decimal_places: c.decimal_places,
+      min_transaction_amount: c.min_transaction_amount,
+      max_transaction_amount: c.max_transaction_amount,
+      requires_id_threshold: c.requires_id_threshold,
+      branch_enabled: true, // Would be calculated per branch
+      branch_has_override: false, // Would be calculated per branch
+    })),
+  };
+}
+
+type CurrencyManagementData = {
+  currencies: Array<{
+    code: string;
+    name: string;
+    symbol: string;
+    is_active: boolean;
+    decimal_places: number;
+    min_transaction_amount: number;
+    max_transaction_amount: number;
+    requires_id_threshold: number | null;
+    branch_enabled: boolean;
+    branch_has_override: boolean;
+  }>;
+};
+
+/**
+ * Get currency denominations for a currency
+ */
+export async function getCurrencyDenominations(currencyCode: string): Promise<
+  Array<{
+    id: string;
+    type: "note" | "coin";
+    value: number;
+    description: string | null;
+    sort_order: number;
+    is_active: boolean;
+  }>
+> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("currency_denominations")
+    .select("*")
+    .eq("currency_code", currencyCode)
+    .order("value", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching denominations:", error);
+    return [];
+  }
+
+  return (data ?? []).map((denomination) => ({
+    id: denomination.id,
+    type: denomination.denomination_type as "note" | "coin",
+    value: denomination.value,
+    description: denomination.description,
+    sort_order: denomination.sort_order,
+    is_active: denomination.is_active,
+  }));
+}
+
+/**
+ * Get rate override history with filters and pagination
+ */
+export async function getRateOverrideHistory(filters?: {
+  branchId?: string;
+  currencyCode?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<RateOverrideHistoryResponse> {
+  const supabase = createClient();
+
+  const page = filters?.page ?? 1;
+  const pageSize = filters?.pageSize ?? 20;
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase
+    .from("rate_override_history")
+    .select(`
+      *,
+      transaction:transactions!inner(
+        reference_number,
+        created_at,
+        branch_id,
+        foreign_currency_code,
+        branch:branches!inner(
+          id,
+          name,
+          code
+        )
+      ),
+      approved_by:staff_profiles!inner(
+        first_name,
+        last_name,
+        role
+      )
+    `, { count: "exact" })
+    .order("approved_at", { ascending: false });
+
+  if (filters?.branchId) {
+    query = query.eq("transaction.branch_id", filters.branchId);
+  }
+
+  if (filters?.currencyCode) {
+    query = query.eq("transaction.foreign_currency_code", filters.currencyCode);
+  }
+
+  if (filters?.startDate) {
+    query = query.gte("approved_at", filters.startDate);
+  }
+
+  if (filters?.endDate) {
+    query = query.lte("approved_at", filters.endDate);
+  }
+
+  const { data, error, count } = await query.range(offset, offset + pageSize - 1);
+
+  if (error) {
+    console.error("Error fetching rate override history:", error);
+    return { overrides: [], total: 0, page, pageSize };
+  }
+
+  const overrides = (data ?? []).map((item: RateOverrideHistoryJoinResult): RateOverrideHistoryWithDetails => ({
+    id: item.id,
+    transaction_id: item.transaction_id,
+    original_rate: item.original_rate,
+    override_rate: item.override_rate,
+    override_percentage: item.override_percentage ?? null,
+    override_reason: item.override_reason,
+    approved_by: item.approved_by,
+    approved_at: item.approved_at,
+    transaction_reference: item.transaction?.reference_number ?? "",
+    transaction_date: item.transaction?.created_at ?? "",
+    branch_id: item.transaction?.branch?.id ?? "",
+    branch_name: item.transaction?.branch?.name ?? "",
+    branch_code: item.transaction?.branch?.code ?? "",
+    currency_code: item.transaction?.foreign_currency_code ?? "",
+    currency_name: "", // Currency name would need to be fetched separately or removed from the type
+    approved_by_name: `${item.approved_by?.first_name ?? ""} ${item.approved_by?.last_name ?? ""}`.trim(),
+    approved_by_role: item.approved_by?.role ?? "operator",
+  }));
+
+  return { overrides, total: count ?? 0, page, pageSize };
+}
+
+type RateOverrideHistoryResponse = {
+  overrides: RateOverrideHistoryWithDetails[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+/**
+ * Get compliance metrics for rate overrides
+ */
+export async function getOverrideComplianceMetrics(): Promise<OverrideComplianceMetrics> {
+  const supabase = createClient();
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+  // Get all overrides in the last 30 days
+  const { data: overrides, error } = await supabase
+    .from("rate_override_history")
+    .select(`
+      *,
+      transaction:transactions(
+        branch_id,
+        foreign_currency_code
+      ),
+      approved_by:staff_profiles(
+        first_name,
+        last_name,
+        role
+      ),
+      branch:branches(
+        name
+      ),
+      currency:currencies(
+        name
+      )
+    `)
+    .gte("approved_at", thirtyDaysAgo.toISOString());
+
+  if (error) {
+    console.error("Error fetching override history:", error);
+    return {
+      totalOverrides: 0,
+      overridesByBranch: [],
+      overridesByStaff: [],
+      overridesByCurrency: [],
+      highVarianceOverrides: 0,
+      suspiciousPatterns: [],
+    };
+  }
+
+  const totalOverrides = overrides?.length ?? 0;
+
+  // Aggregate by branch
+  const branchMap = new Map<string, { count: number; totalVariance: number; name: string }>();
+  
+  // Aggregate by staff
+  const staffMap = new Map<string, { count: number; totalVariance: number; name: string; role: string }>();
+  
+  // Aggregate by currency
+  const currencyMap = new Map<string, { count: number; totalVariance: number; name: string }>();
+
+  let highVarianceCount = 0;
+
+  for (const override of overrides ?? []) {
+    const variance = override.override_percentage ?? 0;
+
+    // Branch aggregation
+    const branchId = typeof override.branch === 'object' && override.branch !== null && 'id' in override.branch
+      ? (override.branch as { id: string }).id
+      : "";
+    const branchName = typeof override.branch === 'object' && override.branch !== null && 'name' in override.branch
+      ? (override.branch as { name: string }).name
+      : "";
+    if (!branchMap.has(branchId)) {
+      branchMap.set(branchId, { count: 0, totalVariance: 0, name: branchName });
+    }
+    const branchData = branchMap.get(branchId)!;
+    branchData.count++;
+    branchData.totalVariance += variance;
+
+    // Staff aggregation
+    const approvedById = override.approved_by;
+    const approvedByName = typeof override.approved_by === 'object' && override.approved_by !== null && 'first_name' in override.approved_by
+      ? `${(override.approved_by as { first_name: string }).first_name ?? ""} ${(override.approved_by as { last_name: string }).last_name ?? ""}`.trim()
+      : "";
+    const approvedByRole = typeof override.approved_by === 'object' && override.approved_by !== null && 'role' in override.approved_by
+      ? (override.approved_by as { role: UserRole }).role
+      : "operator";
+    if (!staffMap.has(approvedById)) {
+      staffMap.set(approvedById, { count: 0, totalVariance: 0, name: approvedByName, role: approvedByRole });
+    }
+    const staffData = staffMap.get(approvedById)!;
+    staffData.count++;
+    staffData.totalVariance += variance;
+
+    // Currency aggregation
+    const transactionCurrencyCode = typeof override.transaction === 'object' && override.transaction !== null && 'foreign_currency_code' in override.transaction
+      ? (override.transaction as { foreign_currency_code: string }).foreign_currency_code
+      : "";
+    const currencyName = typeof override.currency === 'object' && override.currency !== null && 'name' in override.currency
+      ? (override.currency as { name: string }).name
+      : "";
+    if (!currencyMap.has(transactionCurrencyCode)) {
+      currencyMap.set(transactionCurrencyCode, { count: 0, totalVariance: 0, name: currencyName });
+    }
+    const currencyData = currencyMap.get(transactionCurrencyCode)!;
+    currencyData.count++;
+    currencyData.totalVariance += variance;
+
+    // Count high variance overrides (>10%)
+    if (variance > 10) {
+      highVarianceCount++;
+    }
+  }
+
+  const suspiciousPatterns: Array<{ type: string; description: string; count: number }> = [];
+
+  // Check for patterns
+  if (highVarianceCount > 5) {
+    suspiciousPatterns.push({
+      type: "High Variance",
+      description: "Multiple rate overrides with variance > 10%",
+      count: highVarianceCount,
+    });
+  }
+
+  return {
+    totalOverrides,
+    overridesByBranch: Array.from(branchMap.entries()).map(([id, data]) => ({
+      branchId: id,
+      branchName: data.name,
+      count: data.count,
+      averageVariance: data.count > 0 ? data.totalVariance / data.count : 0,
+    })),
+    overridesByStaff: Array.from(staffMap.entries()).map(([id, data]) => ({
+      staffId: id,
+      staffName: data.name,
+      role: data.role,
+      count: data.count,
+      averageVariance: data.count > 0 ? data.totalVariance / data.count : 0,
+    })),
+    overridesByCurrency: Array.from(currencyMap.entries()).map(([code, data]) => ({
+      currencyCode: code,
+      currencyName: data.name,
+      count: data.count,
+      averageVariance: data.count > 0 ? data.totalVariance / data.count : 0,
+    })),
+    highVarianceOverrides: highVarianceCount,
+    suspiciousPatterns,
+  };
+}
+

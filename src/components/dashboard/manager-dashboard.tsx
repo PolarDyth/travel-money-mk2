@@ -1,17 +1,44 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BranchComparison } from "./widgets/manager/branch-comparison";
 import { ReconciliationQueue } from "./widgets/manager/reconciliation-queue";
 import { TrendCharts } from "./widgets/manager/trend-charts";
 import { RateManagement } from "./widgets/manager/rate-management";
 import { StaffPerformance } from "./widgets/manager/staff-performance";
+import { CurrencySettingsDialog } from "./widgets/manager/currency-settings-dialog";
+import { BranchRateEditDialog } from "./widgets/manager/branch-rate-edit-dialog";
 import { useUser } from "@/lib/hooks/use-user";
+import { getBranchRateSettings, type BranchRateSetting } from "@/lib/queries/manager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings } from "lucide-react";
+
+type CurrencySettings = {
+  is_enabled: boolean;
+  allow_rate_override: boolean;
+  max_override_percentage: number | null;
+  require_supervisor_approval: boolean;
+};
 
 export function ManagerDashboard() {
   const router = useRouter();
   const { user } = useUser();
+  const [rateEditOpen, setRateEditOpen] = useState(false);
+  const [currencySettingsOpen, setCurrencySettingsOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<BranchRateSetting | null>(null);
+  const [selectedSettings, setSelectedSettings] = useState<CurrencySettings | undefined>(undefined);
+  const [branchRates, setBranchRates] = useState<BranchRateSetting[]>([]);
+
+  const branchId = user?.branch_id;
+
+  // Fetch branch rate settings
+  useCallback(async () => {
+    if (branchId) {
+      const rates = await getBranchRateSettings(branchId);
+      setBranchRates(rates);
+    }
+  }, [branchId]);
 
   // Navigation handlers
   const handleSelectBranch = useCallback(
@@ -30,21 +57,43 @@ export function ManagerDashboard() {
 
   const handleEditRate = useCallback(
     (currencyId: string) => {
-      if (currencyId) {
-        router.push(`/rates/edit/${currencyId}`);
-      } else {
-        router.push("/rates");
-      }
+      const currencyData = branchRates.find(r => r.currencyCode === currencyId);
+      setSelectedCurrency(currencyData || null);
+      setRateEditOpen(true);
     },
-    [router]
+    [branchRates]
   );
 
-  const handleViewRateHistory = useCallback(
+  const handleEditCurrencySettings = useCallback(
     (currencyId: string) => {
-      router.push(`/rates/history/${currencyId}`);
+      const currencyData = branchRates.find(r => r.currencyCode === currencyId);
+      setSelectedCurrency(currencyData || null);
+      // Fetch full settings would be done here
+      setSelectedSettings({
+        is_enabled: true,
+        allow_rate_override: false,
+        max_override_percentage: null,
+        require_supervisor_approval: true,
+      });
+      setCurrencySettingsOpen(true);
     },
-    [router]
+    [branchRates]
   );
+
+  const handleRateSaved = useCallback(() => {
+    setRateEditOpen(false);
+    // Refetch branch rates
+    if (branchId) {
+      getBranchRateSettings(branchId).then(setBranchRates);
+    }
+  }, [branchId]);
+
+  const handleSettingsSaved = useCallback(() => {
+    setCurrencySettingsOpen(false);
+    setSelectedCurrency(null);
+    setSelectedSettings(undefined);
+    // Refresh data as needed
+  }, []);
 
   return (
       <div className="space-y-6">
@@ -75,13 +124,82 @@ export function ManagerDashboard() {
             )}
             <RateManagement
               onEditRate={handleEditRate}
-              onViewHistory={handleViewRateHistory}
+              onEditSettings={handleEditCurrencySettings}
             />
           </div>
         </div>
 
         {/* Staff Performance Table - Full Width */}
         <StaffPerformance />
-      </div>
+
+        {/* Currency Settings Summary Card */}
+        {branchRates.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Currency Settings Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {branchRates.slice(0, 6).map((rate) => (
+                  <div
+                    key={rate.currencyCode}
+                    className="rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleEditCurrencySettings(rate.currencyCode)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold">{rate.currencyCode}</span>
+                      {rate.hasOverride && (
+                        <span className="text-xs text-amber-600">
+                          Custom Rate
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {rate.hasOverride ? (
+                        <span>
+                          Branch Buy: {rate.branchBuyRate?.toFixed(4) ?? "N/A"}
+                        </span>
+                      ) : (
+                        <span>Using Global Rates</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+      {/* Dialogs */}
+      {selectedCurrency && branchId && (
+        <>
+          <BranchRateEditDialog
+            open={rateEditOpen}
+            onOpenChange={setRateEditOpen}
+            branchId={branchId}
+            currencyCode={selectedCurrency.currencyCode}
+            currencyName={selectedCurrency.currencyName}
+            globalBuyRate={selectedCurrency.globalBuyRate}
+            globalSellRate={selectedCurrency.globalSellRate}
+            currentBuyRate={selectedCurrency.branchBuyRate}
+            currentSellRate={selectedCurrency.branchSellRate}
+            hasOverride={selectedCurrency.hasOverride}
+            onSave={handleRateSaved}
+          />
+          <CurrencySettingsDialog
+            open={currencySettingsOpen}
+            onOpenChange={setCurrencySettingsOpen}
+            branchId={branchId}
+            currencyCode={selectedCurrency.currencyCode}
+            currencyName={selectedCurrency.currencyName}
+            currentSettings={selectedSettings}
+            onSave={handleSettingsSaved}
+          />
+        </>
+      )}
+    </div>
   );
 }

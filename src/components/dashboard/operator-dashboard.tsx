@@ -74,7 +74,9 @@ export function OperatorDashboard() {
   // Fetch alerts when branch is loaded
   useEffect(() => {
     if (user?.branch_id) {
-      getUnresolvedAlerts(user.branch_id).then(setAlerts);
+      getUnresolvedAlerts(user.branch_id).then((result) => {
+        setAlerts(result.data ?? []);
+      });
     }
   }, [user?.branch_id]);
 

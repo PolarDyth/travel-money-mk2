@@ -95,7 +95,7 @@ export function ActiveSessionView({ session, denominations, exchangeRates }: Act
          </CardHeader>
          <CardContent>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 {Object.entries(session.expectedForeign).filter(([_, val]) => Math.abs(val) > 0.01).map(([code, val]) => (
+                 {Object.entries(session.expectedForeign).filter(([, val]) => Math.abs(val) > 0.01).map(([code, val]) => (
                      <div key={code} className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm">
                          <div className="text-sm text-muted-foreground">{code}</div>
                          <div className="text-lg font-bold font-mono">{formatCurrency(val, code)}</div>
@@ -115,9 +115,9 @@ export function ActiveSessionView({ session, denominations, exchangeRates }: Act
   );
 }
 
-function SpotCheckDialog({ session, denominations, exchangeRates }: ActiveSessionViewProps) {
-    const [_counts, setCounts] = useState<DenominationCount[]>([]);
-    const [_totalGbp, setTotalGbp] = useState(0);
+function SpotCheckDialog({ denominations, exchangeRates }: Omit<ActiveSessionViewProps, 'session'>) {
+    const [, setCounts] = useState<DenominationCount[]>([]);
+    const [, setTotalGbp] = useState(0);
     
     return (
         <Dialog>

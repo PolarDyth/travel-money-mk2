@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, AlertTriangle } from "lucide-react";
-import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/actions';
+import { TransactionDraft } from '@/app/(dashboard)/operator/transaction/schemas';
 import { TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepCustomerProps {

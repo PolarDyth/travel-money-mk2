@@ -7,16 +7,17 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { requestPasswordReset } from '../auth/actions'
+import type { ActionResult } from '@/lib/types/response'
+import { getErrorMessage } from '@/lib/types/response'
 
-const initialState = {
-  error: '',
-  success: '',
+const initialState: ActionResult = {
+  success: false,
 }
 
 export function ForgotPasswordForm() {
   const [state, formAction, isPending] = useActionState(requestPasswordReset, initialState)
 
-  if (state?.success) {
+  if (state?.success && state.data) {
     return (
       <div className="flex flex-col items-center gap-6 text-center animate-in fade-in slide-in-from-bottom-4">
         <div className="rounded-full bg-green-100 p-3 text-green-600 dark:bg-green-900/30">
@@ -24,7 +25,7 @@ export function ForgotPasswordForm() {
         </div>
         <div className="space-y-2">
             <h3 className="text-lg font-medium">Request Sent</h3>
-            <p className="text-sm text-muted-foreground">{state.success}</p>
+            <p className="text-sm text-muted-foreground">{typeof state.data === 'string' ? state.data : 'Password reset link sent to your email'}</p>
         </div>
         <Button asChild className="w-full">
           <Link href="/">Return to Login</Link>
@@ -49,7 +50,7 @@ export function ForgotPasswordForm() {
       {state?.error && (
         <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
-          <p>{state.error}</p>
+          <p>{getErrorMessage(state.error)}</p>
         </div>
       )}
 

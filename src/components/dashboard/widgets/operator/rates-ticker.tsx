@@ -54,7 +54,14 @@ export function RatesTicker({
 
   useEffect(() => {
     async function fetchRates() {
-      const newRates = await getCurrentRates(branchId);
+      const result = await getCurrentRates(branchId);
+
+      if (!result.data) {
+        setIsLoading(false);
+        return;
+      }
+
+      const newRates = result.data;
 
     // Compare with previous rates to determine changes
     const ratesWithChanges: RateWithChange[] = newRates.map((rate) => {

@@ -133,7 +133,8 @@ export function StaffPerformance({ className }: StaffPerformanceProps) {
     URL.revokeObjectURL(url);
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  // Render sort icon inline to avoid component creation during render
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
     return sortDirection === "asc" ? (
       <ChevronUp className="w-3 h-3" />
@@ -206,7 +207,7 @@ export function StaffPerformance({ className }: StaffPerformanceProps) {
                   >
                     <div className="flex items-center gap-1">
                       Name
-                      <SortIcon field="name" />
+                      {renderSortIcon("name")}
                     </div>
                   </th>
                   <th className="px-2 py-2 text-left text-[10px] font-semibold text-zinc-500 uppercase">
@@ -218,7 +219,7 @@ export function StaffPerformance({ className }: StaffPerformanceProps) {
                   >
                     <div className="flex items-center justify-end gap-1">
                       TXNs
-                      <SortIcon field="transactions" />
+                      {renderSortIcon("transactions")}
                     </div>
                   </th>
                   <th
@@ -227,7 +228,7 @@ export function StaffPerformance({ className }: StaffPerformanceProps) {
                   >
                     <div className="flex items-center justify-end gap-1">
                       Volume
-                      <SortIcon field="volume" />
+                      {renderSortIcon("volume")}
                     </div>
                   </th>
                   <th className="px-2 py-2 text-right text-[10px] font-semibold text-zinc-500 uppercase">
@@ -239,7 +240,7 @@ export function StaffPerformance({ className }: StaffPerformanceProps) {
                   >
                     <div className="flex items-center justify-end gap-1">
                       Void %
-                      <SortIcon field="voidRate" />
+                      {renderSortIcon("voidRate")}
                     </div>
                   </th>
                 </tr>

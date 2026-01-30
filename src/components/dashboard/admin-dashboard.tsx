@@ -6,13 +6,17 @@ import { SystemHealth } from "./widgets/admin/system-health";
 import { AuditTrail } from "./widgets/admin/audit-trail";
 import { ComplianceOverview } from "./widgets/admin/compliance-overview";
 import { StaffDirectory } from "./widgets/admin/staff-directory";
+import { CurrencyManagement } from "./widgets/admin/currency-management";
+import { DenominationManagement } from "./widgets/admin/denomination-management";
+import { RateOverrideAudit } from "./widgets/admin/rate-override-audit";
 import { getSystemHealth, type SystemHealthStats } from "@/lib/queries/admin";
-import { Monitor, AlertTriangle, RefreshCw } from "lucide-react";
+import { Monitor, AlertTriangle, RefreshCw, Database, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/lib/hooks/use-user";
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<SystemHealthStats | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "currencies" | "audit">("overview");
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
@@ -89,20 +93,82 @@ export function AdminDashboard() {
           )}
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column: System Health + Audit Trail */}
-          <div className="col-span-12 lg:col-span-6 space-y-6">
-            <SystemHealth />
-            <AuditTrail />
-          </div>
-
-          {/* Right Column: Compliance + Staff */}
-          <div className="col-span-12 lg:col-span-6 space-y-6">
-            <ComplianceOverview />
-            <StaffDirectory />
-          </div>
+        {/* Navigation Tabs */}
+        <div className="flex gap-2 border-b pb-1">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-colors",
+              activeTab === "overview"
+                ? "text-black border-b-2 border-black"
+                : "text-muted-foreground hover:text-black"
+            )}
+          >
+            <Monitor className="h-4 w-4 mr-2 inline" />
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("currencies")}
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-colors",
+              activeTab === "currencies"
+                ? "text-black border-b-2 border-black"
+                : "text-muted-foreground hover:text-black"
+            )}
+          >
+            <Database className="h-4 w-4 mr-2 inline" />
+            Currencies
+          </button>
+          <button
+            onClick={() => setActiveTab("audit")}
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-colors",
+              activeTab === "audit"
+                ? "text-black border-b-2 border-black"
+                : "text-muted-foreground hover:text-black"
+            )}
+          >
+            <History className="h-4 w-4 mr-2 inline" />
+            Audit Trail
+          </button>
         </div>
+
+        {/* Tab Content */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column: System Health + Audit Trail */}
+            <div className="col-span-12 lg:col-span-6 space-y-6">
+              <SystemHealth />
+              <AuditTrail />
+            </div>
+
+            {/* Right Column: Compliance + Staff */}
+            <div className="col-span-12 lg:col-span-6 space-y-6">
+              <ComplianceOverview />
+              <StaffDirectory />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "currencies" && (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column: Currency Management */}
+            <div className="col-span-12 lg:col-span-8">
+              <CurrencyManagement />
+            </div>
+
+            {/* Right Column: Denomination Management */}
+            <div className="col-span-12 lg:col-span-4">
+              <DenominationManagement />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "audit" && (
+          <div className="grid grid-cols-1">
+            <RateOverrideAudit />
+          </div>
+        )}
       </div>
   );
 }

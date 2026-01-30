@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { DenominationWithCurrency, DrawerSummary } from '@/lib/queries/drawer';
 import { OpenDrawerForm } from './open-drawer-form';
 import { ActiveSessionView } from './active-session-view';

@@ -33,29 +33,23 @@ export function calculateOptimalDenominations(
 }
 
 export function calculateExchangeAmount(
-  amount: number, 
-  rate: number, 
+  amount: number,
+  rate: number,
   type: 'buy' | 'sell'
 ): number {
-    // If buying foreign currency, we give GBP, so Amount * Rate ? No.
-    // Buy Rate: Bank BUYS foreign currency. Customer SELLS foreign currency.
-    // Sell Rate: Bank SELLS foreign currency. Customer BUYS foreign currency.
-    
-    // Scenario 1: Customer buys 100 EUR (Sell transaction for Bureau)
-    // Rate 1.15. 
-    // GBP cost = 100 / 1.15 = 86.95 GBP
-    
-    // Scenario 2: Customer sells 100 EUR (Buy transaction for Bureau)
-    // Rate 1.25.
-    // GBP payout = 100 / 1.25 = 80.00 GBP
+  // For 'buy': bureau BUYS foreign currency FROM customer
+  // Customer gives us foreign_amount, we give them base_amount
+  // base_amount = foreign_amount / buy_rate
 
-    // Wait, the standard is usually:
-    // Buy Rate = Client gets X Foreign for 1 GBP ? Or 1 GBP buys X Foreign?
-    // Usually rates are displayed as "We Buy at 1.25" meaning 1 GBP = 1.25 EUR.
-    // If I have 100 EUR to sell to the bureau. 100 / 1.25 = 80 GBP.
-    
-    // So calculation is always: Foreign / Rate = GBP.
-    // Or GBP * Rate = Foreign.
+  // For 'sell': bureau SELLS foreign currency TO customer
+  // Customer gives us base_amount, we give them foreign_amount
+  // foreign_amount = base_amount * sell_rate
 
-    return Number((amount).toFixed(2));
+  if (type === 'buy') {
+    // When buying foreign currency, divide by rate
+    return Number((amount / rate).toFixed(2));
+  } else {
+    // When selling foreign currency, multiply by rate
+    return Number((amount * rate).toFixed(2));
+  }
 }

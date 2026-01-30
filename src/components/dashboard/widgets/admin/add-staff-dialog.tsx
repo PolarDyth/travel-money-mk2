@@ -1,6 +1,6 @@
 'use client'
 
-import { startTransition, useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,10 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Plus, Loader2 } from 'lucide-react'
-import { createStaffMember, type CreateStaffState } from '@/app/(dashboard)/admin/actions'
+import { createStaffMember } from '@/app/(dashboard)/admin/actions'
 import { getBranches, type BranchOption } from '@/lib/queries/admin'
+import type { ActionResult } from '@/lib/types/response'
+import { getErrorMessage } from '@/lib/types/response'
 
-const initialState: CreateStaffState = {}
+const initialState: ActionResult<void> = {
+  success: false,
+}
 
 function AddStaffForm({ onSuccess }: { onSuccess: () => void }) {
   const [branches, setBranches] = useState<BranchOption[]>([])
@@ -102,7 +106,7 @@ function AddStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
       {state.error && (
         <div className="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-200">
-          {state.error}
+          {getErrorMessage(state.error)}
         </div>
       )}
 

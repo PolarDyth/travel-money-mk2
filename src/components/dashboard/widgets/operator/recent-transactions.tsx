@@ -63,11 +63,19 @@ export function RecentTransactions({
 
   const fetchTransactions = useCallback(
     async (offset: number = 0) => {
-      const { transactions: txns, hasMore: more } = await getRecentTransactions(
+      const result = await getRecentTransactions(
         branchId,
         5,
         offset
       );
+
+      if (!result.data) {
+        setTransactions([]);
+        setHasMore(false);
+        return;
+      }
+
+      const { transactions: txns, hasMore: more } = result.data;
 
       if (offset === 0) {
         setTransactions(txns);
@@ -90,7 +98,7 @@ export function RecentTransactions({
 
   useEffect(() => {
     void loadInitialTransactions();
-  }, [loadInitialTransactions]);
+  }, [loadInitialTransactions, setIsLoading]);
 
   const handleLoadMore = async () => {
     setIsLoadingMore(true);

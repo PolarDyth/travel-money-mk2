@@ -34,7 +34,7 @@ async function seedAdmin() {
 
   // 1. Ensure a Branch Exists (Head Office)
   console.log('Checking for Head Office branch...')
-  const { data: existingBranch, error: branchCheckError } = await supabase
+  const { data: existingBranch } = await supabase
     .from('branches')
     .select('id')
     .eq('code', 'HO')

@@ -67,13 +67,13 @@ export function DrawerStatus({
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const drawerSession = await getActiveDrawerSession(operatorId);
-      setSession(drawerSession);
+      const sessionResult = await getActiveDrawerSession(operatorId);
+      setSession(sessionResult.data);
 
-      if (drawerSession) {
-        const sessionStats = await getSessionStats(drawerSession.id);
-        setStats(sessionStats);
-        setDuration(formatDuration(drawerSession.opened_at));
+      if (sessionResult.data) {
+        const statsResult = await getSessionStats(sessionResult.data.id);
+        setStats(statsResult.data);
+        setDuration(formatDuration(sessionResult.data.opened_at));
       }
       setIsLoading(false);
     }

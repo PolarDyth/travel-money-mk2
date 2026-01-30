@@ -1,5 +1,26 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 This repository is a retail POS system for a currency exchange bureau (M&S-style).
 It is used by operators in-store, so correctness, clarity, and safety matter more than clever code.
+
+## Common Commands
+
+```bash
+# Development
+pnpm dev              # Start dev server on port 3000
+pnpm build            # Build for production
+pnpm start            # Start production server
+pnpm lint             # Run ESLint
+
+# Database / Seeding
+npx tsx scripts/seed-admin.ts <email> <password>    # Create admin user
+npx tsx scripts/seed-rates.ts                       # Seed exchange rates
+
+# Database Migrations (via Supabase CLI or direct SQL)
+# Migrations are in scripts/*.sql files
+```
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router)
@@ -10,7 +31,8 @@ It is used by operators in-store, so correctness, clarity, and safety matter mor
 - **Validation**: Zod
 - **Charts**: Recharts
 - **Backend/Auth**: Supabase (Postgres + RLS)
-- **Key Libraries**: `@sentry/nextjs` (Error capturing)
+- **Error Tracking**: `@sentry/nextjs`
+- **Package Manager**: pnpm (preferred)
 
 ## Project Structure
 ```
@@ -40,13 +62,54 @@ docs/                       # Documentation
 ```
 
 ## Architecture & Patterns
-- **Data Fetching**: 
-  - Prefer Server Components fetching data directly via `src/lib/queries`.
-  - Use **Server Actions** (`actions.ts`) for mutations (create/update).
-  - **No React Query**: State is managed via Server Actions/App Router or local state.
-- **Transactions**: 
-  - Complex wizard flows use `use-transaction.ts` hook.
-  - Final submission is a Server Action.
+
+### Request Flow & Authentication
+1. All requests go through `src/utils/supabase/middleware.ts` for auth checks
+2. Protected routes require: authenticated Supabase user + active `staff_profiles` record
+3. Role-based access enforced via `ROLE_HIERARCHY` in `src/types/index.ts`
+
+### Data Layer Patterns
+- **Server Components**: Fetch data directly via `src/lib/queries/*.ts`
+- **Mutations**: Always use Server Actions (`actions.ts` files co-located with routes)
+- **No React Query**: State managed via Server Actions or local React state
+- **Error Handling**: All Server Actions return `ActionResult<T>` type from `src/lib/types/response.ts`
+
+### Server Action Structure
+Every `actions.ts` file follows this pattern:
+```typescript
+'use server'
+
+import { createClient } from "@/utils/supabase/server"
+import { revalidatePath } from "next/cache"
+import { createErrorResult, createSuccessResult, ActionResult } from "@/lib/types/response"
+
+export async function someAction(params: Params): Promise<ActionResult<ReturnType>> {
+  try {
+    const supabase = await createClient()
+    // 1. Validate input (Zod)
+    // 2. Get user & verify permissions
+    // 3. Perform business logic
+    // 4. Database operations
+    // 5. revalidatePath()
+    return createSuccessResult(data)
+  } catch (error) {
+    // captureError() sends to Sentry
+    return createErrorResult(...)
+  }
+}
+```
+
+### Transaction Wizard Pattern
+- Multi-step transaction flows use `use-transaction.ts` hook
+- State managed in `TransactionState` interface
+- Steps: currency → customer → denominations → review → success
+- Final submission via `submitTransaction()` Server Action
+
+### Error Handling Architecture
+- All custom errors extend `AppErrorClass` in `src/lib/errors.ts`
+- Error codes in `ErrorCode` enum (UNAUTHORIZED, VALIDATION_ERROR, DRAWER_NOT_OPEN, etc.)
+- `captureError()` sends to Sentry with context
+- Server Actions return standardized `ActionResult<T>`
 
 ## Database Schema
 
@@ -77,9 +140,14 @@ docs/                       # Documentation
 
 ### Key Concepts
 - **Buy rate**: Rate at which bureau BUYS foreign currency FROM customer (lower)
+  - Customer gives foreign_amount, bureau gives base_amount
+  - Calculation: `base_amount = foreign_amount / buy_rate`
 - **Sell rate**: Rate at which bureau SELLS foreign currency TO customer (higher)
+  - Customer gives base_amount, bureau gives foreign_amount
+  - Calculation: `foreign_amount = base_amount * sell_rate`
 - **Base currency**: GBP (British Pound Sterling)
-- Transaction references auto-generated: `TXN-{BRANCH}-{YYYYMMDD}-{SEQ}`
+- Transaction references auto-generated: `TXN-{BRANCH}-{YYYYMMDD}-{UUID8}`
+- **Drawer sessions**: Till float tracking with denomination-level cash counts
 
 ### RLS Security Model
 1. Must be authenticated via Supabase Auth
@@ -97,11 +165,12 @@ import { hasRoleOrHigher, USER_ROLES } from '@/types'
 - **Correctness First**: This handles money. Logic must be airtight.
 - **Readability**: Prefer obvious code.
 - **Type Safety**: Strictly typed. No `any`. Use `zod` for input validation.
-- **Component Usage**: If you need a shadcn component use the CLI to download it.
-- **File Placement**: 
+- **Component Usage**: If you need a shadcn component, use the CLI: `npx shadcn@latest add <component>`
+- **File Placement**:
   - Business logic → `src/lib`
   - Data queries → `src/lib/queries`
   - Reusable UI → `src/components/ui`
+- **Environment**: Requires `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## UI / UX Rules
 - This is a till system, not a consumer app.
@@ -110,11 +179,19 @@ import { hasRoleOrHigher, USER_ROLES } from '@/types'
 - Buy and Sell flows must remain visually distinct.
 
 ## Data & Security
-- Assume all input is untrusted.
-- RLS is enforced at the database layer.
-- Never bypass RLS logic in application code.
+- Assume all input is untrusted. Validate with Zod schemas.
+- RLS is enforced at the database layer. Never bypass RLS logic.
 - All monetary amounts use DECIMAL for precision.
 - All timestamps use TIMESTAMPTZ for timezone awareness.
+- Supabase client created via `createClient()` from `@/utils/supabase/server`
+- For admin operations requiring elevated permissions, use `SUPABASE_SERVICE_ROLE_KEY` (scripts only)
+
+## Key Business Logic Files
+- `src/lib/transaction-utils.ts`: Core exchange calculations (calculateExchangeAmount, calculateOptimalDenominations)
+- `src/lib/errors.ts`: Error class hierarchy and Sentry integration
+- `src/lib/types/response.ts`: ActionResult<T> type for Server Action returns
+- `src/utils/supabase/middleware.ts`: Auth middleware for route protection
+- `src/components/operator/transaction/use-transaction.ts`: Transaction wizard state management
 
 ## Behaviour
 - Do NOT generate large blocks of code unless asked.

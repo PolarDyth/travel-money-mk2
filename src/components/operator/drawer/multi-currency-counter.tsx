@@ -15,8 +15,8 @@ import { Separator } from '@/components/ui/separator';
 interface MultiCurrencyCounterProps {
   denominations: DenominationWithCurrency[];
   exchangeRates: Record<string, number>;
-  
-  mode: 'opening' | 'closing' | 'spot-check';
+
+  // mode: 'opening' | 'closing' | 'spot-check'; // TODO: implement mode-specific behavior
   initialCounts?: DenominationCount[];
   mandatoryCurrencies?: string[]; // ['GBP', 'USD', 'EUR']
   suggestedCurrencies?: string[]; // Currencies used in session
@@ -26,7 +26,6 @@ interface MultiCurrencyCounterProps {
 export function MultiCurrencyCounter({
   denominations,
   exchangeRates,
-  mode,
   initialCounts = [],
   mandatoryCurrencies = ['GBP', 'EUR', 'USD'],
   suggestedCurrencies = [],
@@ -137,7 +136,7 @@ export function MultiCurrencyCounter({
   // Propagate changes
   useEffect(() => {
     const countArray: DenominationCount[] = Object.entries(counts)
-      .filter(([_, qty]) => qty > 0)
+      .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => ({ denomination_id: id, count: qty }));
     
     onCountsChange(countArray, totals.totalGbpValue);

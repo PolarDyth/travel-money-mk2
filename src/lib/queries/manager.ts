@@ -2,9 +2,16 @@ import { createClient } from "@/utils/supabase/client";
 import type {
   Branch,
   DailyReconciliation,
-  ExchangeRate,
-  StaffProfile,
+  ExchangeRateSettings,
+  Currency,
 } from "@/types";
+import type { BranchCurrencySettings } from "@/lib/types/currency-editing";
+
+// Type for the joined query result from exchange_rate_settings
+type ExchangeRateSettingsJoinResult = ExchangeRateSettings & {
+  currencies: Pick<Currency, "name" | "symbol" | "decimal_places"> | null;
+  branches: Pick<Branch, "id" | "name" | "code"> | null;
+};
 
 export type BranchMetric = {
   id: string;
@@ -46,6 +53,16 @@ export type StaffPerformance = {
   totalVolume: number;
   voidRate: number;
   avgTransactionValue: number;
+};
+
+export type BranchRateSetting = {
+  currencyCode: string;
+  currencyName: string;
+  globalBuyRate: number;
+  globalSellRate: number;
+  branchBuyRate?: number;
+  branchSellRate?: number;
+  hasOverride: boolean;
 };
 
 export type RateWithOverride = {
@@ -386,4 +403,116 @@ export async function approveReconciliation(
   }
 
   return { success: true };
+}
+
+/**
+ * Get branch currency settings with currency details
+ */
+export async function getBranchCurrencySettings(
+  branchId: string
+): Promise<BranchCurrencySettings[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("exchange_rate_settings")
+    .select(`
+      *,
+      currencies!inner(code, name, symbol, decimal_places),
+      branches!inner(id, name, code)
+    `)
+    .eq("branch_id", branchId)
+    .order("currencies(code)", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching branch currency settings:", error);
+    return [];
+  }
+
+  return (data ?? []).map((item: ExchangeRateSettingsJoinResult): BranchCurrencySettings => ({
+    id: item.id,
+    branch_id: item.branch_id,
+    currency_code: item.currency_code,
+    is_enabled: item.is_enabled,
+    allow_rate_override: item.allow_rate_override,
+    max_override_percentage: item.max_override_percentage ?? null,
+    require_supervisor_approval: item.require_supervisor_approval,
+    supervisor_override_reason_required: item.supervisor_override_reason_required,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    currency_name: item.currencies?.name ?? "",
+    currency_symbol: item.currencies?.symbol ?? "",
+    currency_decimal_places: item.currencies?.decimal_places ?? 2,
+    branch_name: item.branches?.name ?? "",
+    branch_code: item.branches?.code ?? "",
+  }));
+}
+
+/**
+ * Get branch-specific rates compared to global rates
+ */
+export async function getBranchRateSettings(branchId: string): Promise<BranchRateSetting[]> {
+  const supabase = createClient();
+
+  const now = new Date().toISOString();
+
+  // Get global rates
+  const { data: globalRates, error: globalError } = await supabase
+    .from("exchange_rates")
+    .select("currency_code, buy_rate, sell_rate")
+    .is("branch_id", null)
+    .lte("effective_from", now)
+    .or(`effective_until.is.null,effective_until.gt.${now}`);
+
+  if (globalError) {
+    console.error("Error fetching global rates:", globalError);
+    return [];
+  }
+
+  // Get branch rates
+  const { data: branchRates, error: branchError } = await supabase
+    .from("exchange_rates")
+    .select("currency_code, buy_rate, sell_rate")
+    .eq("branch_id", branchId)
+    .lte("effective_from", now)
+    .or(`effective_until.is.null,effective_until.gt.${now}`);
+
+  if (branchError) {
+    console.error("Error fetching branch rates:", branchError);
+  }
+
+  const branchRateMap = new Map<string, { buy_rate: number; sell_rate: number }>();
+  for (const rate of branchRates ?? []) {
+    branchRateMap.set(rate.currency_code, {
+      buy_rate: rate.buy_rate,
+      sell_rate: rate.sell_rate,
+    });
+  }
+
+  // Get currency names
+  const { data: currencies, error: currencyError } = await supabase
+    .from("currencies")
+    .select("code, name")
+    .eq("is_active", true);
+
+  if (currencyError) {
+    console.error("Error fetching currencies:", currencyError);
+  }
+
+  const currencyNameMap = new Map<string, string>();
+  for (const curr of currencies ?? []) {
+    currencyNameMap.set(curr.code, curr.name);
+  }
+
+  return (globalRates ?? []).map((globalRate) => {
+    const branchRate = branchRateMap.get(globalRate.currency_code);
+    return {
+      currencyCode: globalRate.currency_code,
+      currencyName: currencyNameMap.get(globalRate.currency_code) ?? "",
+      globalBuyRate: globalRate.buy_rate,
+      globalSellRate: globalRate.sell_rate,
+      branchBuyRate: branchRate?.buy_rate,
+      branchSellRate: branchRate?.sell_rate,
+      hasOverride: branchRate !== undefined,
+    };
+  });
 }

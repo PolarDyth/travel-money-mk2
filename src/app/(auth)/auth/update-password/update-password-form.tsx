@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertCircle } from 'lucide-react'
 import { updatePassword } from '../actions'
+import type { ActionResult } from '@/lib/types/response'
+import { getErrorMessage } from '@/lib/types/response'
 
-const initialState = {
-  error: '',
+const initialState: ActionResult = {
+  success: false,
 }
 
 export function UpdatePasswordForm() {
@@ -44,7 +46,7 @@ export function UpdatePasswordForm() {
       {state?.error && (
          <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
-          <p>{state.error}</p>
+          <p>{getErrorMessage(state.error)}</p>
         </div>
       )}
 

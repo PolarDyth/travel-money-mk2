@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon, ArrowLeftRight } from "lucide-react";
+import { InfoIcon, ArrowLeftRight, Edit } from "lucide-react";
 import { Currency, TransactionUpdateHandler } from '@/app/(dashboard)/operator/transaction/types';
 
 interface StepCurrencyProps {
@@ -21,6 +21,16 @@ interface StepCurrencyProps {
   onUpdate: TransactionUpdateHandler;
   onNext: () => void;
   onCancel: () => void;
+  userRole?: string;
+  canOverrideRate?: boolean;
+  branchId?: string;
+  onRateOverrideClick?: () => void;
+  rateOverride?: {
+    originalRate: number;
+    overrideRate: number;
+  };
+  hasDraft?: boolean;
+  onDiscardDraft?: () => void;
 }
 
 export function StepCurrency({
@@ -32,11 +42,19 @@ export function StepCurrency({
   currencies,
   onUpdate,
   onNext,
-  onCancel
+  onCancel,
+  canOverrideRate,
+  onRateOverrideClick,
+  rateOverride,
+  hasDraft,
+  onDiscardDraft,
 }: StepCurrencyProps) {
-  
+
   // Find selected currency object to get symbol etc
   const selectedCurrency = currencies.find(c => c.code === currencyCode);
+
+  // Determine effective rate - use override rate if available, otherwise use exchange rate
+  const effectiveRate = rateOverride ? rateOverride.overrideRate : exchangeRate;
 
   const handleTypeChange = (newType: 'buy' | 'sell') => {
     // When switching type, re-calculate amounts based on the same foreign amount if possible
@@ -60,7 +78,7 @@ export function StepCurrency({
     // So Foreign / Rate = GBP.
     
     // Let's assume passed `exchangeRate` is always "Foreign per 1 GBP".
-    const newBase = exchangeRate > 0 ? val / exchangeRate : 0;
+    const newBase = effectiveRate > 0 ? val / effectiveRate : 0;
     
     onUpdate({ 
       foreign_amount: val,
@@ -71,7 +89,7 @@ export function StepCurrency({
   const handleBaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value) || 0;
     // Foreign = GBP * Rate
-    const newForeign = val * exchangeRate;
+    const newForeign = val * effectiveRate;
     
     onUpdate({ 
       base_amount: val,
@@ -110,11 +128,33 @@ export function StepCurrency({
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Curencies & Amounts</CardTitle>
-          <CardDescription>Select currency and enter amount. Rate: {exchangeRate.toFixed(4)}</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>Currencies & Amounts</CardTitle>
+            <CardDescription className="mt-1">Select currency and enter amount. Rate: {effectiveRate.toFixed(4)}</CardDescription>
+          </div>
+          {canOverrideRate && onRateOverrideClick && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRateOverrideClick}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Rate
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
+          {rateOverride && (
+            <Alert variant="destructive">
+              <AlertTitle>Rate Override Applied</AlertTitle>
+              <AlertDescription>
+                Original rate: {rateOverride.originalRate.toFixed(6)} → 
+                Override rate: {rateOverride.overrideRate.toFixed(6)}
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-2">
             <Label>Currency</Label>
             <Select value={currencyCode} onValueChange={handleCurrencyChange}>
@@ -165,14 +205,26 @@ export function StepCurrency({
             <InfoIcon className="h-4 w-4" />
             <AlertTitle>Exchange Rate</AlertTitle>
             <AlertDescription>
-                1 GBP = {exchangeRate} {currencyCode}
+                1 GBP = {effectiveRate} {currencyCode}
+                {rateOverride && (
+                  <span className="ml-2 text-destructive font-semibold">
+                    (Override Applied)
+                  </span>
+                )}
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
 
-      <div className="flex justify-between">
-         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+      <div className="flex justify-between gap-2">
+         <div className="flex gap-2">
+           <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+           {hasDraft && onDiscardDraft && (
+             <Button variant="ghost" onClick={onDiscardDraft} className="text-destructive hover:text-destructive">
+               Start Over
+             </Button>
+           )}
+         </div>
          <Button onClick={onNext} disabled={!currencyCode || foreignAmount <= 0}>
            Next (Customer)
          </Button>

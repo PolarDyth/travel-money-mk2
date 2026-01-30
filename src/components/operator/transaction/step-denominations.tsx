@@ -34,7 +34,8 @@ export function StepDenominations({
         const optimal = calculateOptimalDenominations(amount, denominations);
         onUpdate({ denominations: optimal });
     }
-  }, [amount, denominations]); // Removed currentCounts to avoid loop if parent updates ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount, denominations]); // Intentionally excluding onUpdate to prevent dependency loops
 
   const handleCountChange = (id: string, value: string) => {
     const val = parseInt(value, 10) || 0;

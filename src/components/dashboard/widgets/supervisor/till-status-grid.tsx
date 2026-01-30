@@ -30,6 +30,7 @@ import {
   suspendDrawerSession,
 } from "@/app/(dashboard)/supervisor/actions";
 import type { DrawerSessionStatus } from "@/types";
+import { getErrorMessage } from "@/lib/types/response";
 
 type TillStatusGridProps = {
   branchId: string;
@@ -156,8 +157,9 @@ export function TillStatusGrid({
     if (actionType === "suspend") {
       const result = await suspendDrawerSession(payload);
       if (result?.error) {
-        toast.error("Unable to suspend till", { description: result.error });
-        setActionError(result.error);
+        const errorMessage = getErrorMessage(result.error);
+        toast.error("Unable to suspend till", { description: errorMessage });
+        setActionError(errorMessage);
         setIsSubmitting(false);
         return;
       }
@@ -177,8 +179,9 @@ export function TillStatusGrid({
     } else {
       const result = await forceCloseDrawerSession(payload);
       if (result?.error) {
-        toast.error("Unable to force close till", { description: result.error });
-        setActionError(result.error);
+        const errorMessage = getErrorMessage(result.error);
+        toast.error("Unable to force close till", { description: errorMessage });
+        setActionError(errorMessage);
         setIsSubmitting(false);
         return;
       }

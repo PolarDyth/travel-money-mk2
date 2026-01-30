@@ -11,11 +11,13 @@ import { getGlobalRatesWithOverrides, type RateWithOverride } from "@/lib/querie
 
 type RateManagementProps = {
   onEditRate?: (currencyId: string) => void;
+  onEditSettings?: (currencyId: string) => void;
   onViewHistory?: (currencyId: string) => void;
 };
 
 export function RateManagement({
   onEditRate,
+  onEditSettings,
   onViewHistory,
 }: RateManagementProps) {
   const [rates, setRates] = useState<RateWithOverride[]>([]);
@@ -121,7 +123,17 @@ export function RateManagement({
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 cursor-pointer"
+                    onClick={() => onEditSettings?.(rate.currency_code)}
+                    title="Edit Currency Settings"
+                  >
+                    <TrendingUp className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 cursor-pointer"
                     onClick={() => onEditRate?.(rate.currency_code)}
+                    title="Edit Branch Rate"
                   >
                     <Edit className="w-3 h-3" />
                   </Button>
@@ -130,6 +142,7 @@ export function RateManagement({
                     size="sm"
                     className="h-6 w-6 p-0 cursor-pointer"
                     onClick={() => onViewHistory?.(rate.currency_code)}
+                    title="View Rate History"
                   >
                     <History className="w-3 h-3" />
                   </Button>

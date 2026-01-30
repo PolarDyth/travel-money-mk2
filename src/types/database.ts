@@ -544,6 +544,60 @@ export type Database = {
           },
         ]
       }
+      exchange_rate_settings: {
+        Row: {
+          allow_rate_override: boolean
+          branch_id: string
+          created_at: string
+          currency_code: string
+          id: string
+          is_enabled: boolean
+          max_override_percentage: number | null
+          require_supervisor_approval: boolean
+          supervisor_override_reason_required: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_rate_override?: boolean
+          branch_id: string
+          created_at?: string
+          currency_code: string
+          id?: string
+          is_enabled?: boolean
+          max_override_percentage?: number | null
+          require_supervisor_approval?: boolean
+          supervisor_override_reason_required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_rate_override?: boolean
+          branch_id?: string
+          created_at?: string
+          currency_code?: string
+          id?: string
+          is_enabled?: boolean
+          max_override_percentage?: number | null
+          require_supervisor_approval?: boolean
+          supervisor_override_reason_required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rate_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rate_settings_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       operator_notifications: {
         Row: {
           created_at: string
@@ -644,6 +698,54 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_override_history: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          id: string
+          original_rate: number
+          override_percentage: number | null
+          override_rate: number
+          override_reason: string
+          transaction_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          id?: string
+          original_rate: number
+          override_percentage?: number | null
+          override_rate: number
+          override_reason: string
+          transaction_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          id?: string
+          original_rate?: number
+          override_percentage?: number | null
+          override_rate?: number
+          override_reason?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_override_history_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_override_history_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -759,6 +861,9 @@ export type Database = {
           operator_id: string
           original_transaction_id: string | null
           rate_id: string | null
+          rate_override_approved_by: string | null
+          rate_override_reason: string | null
+          rate_override_source: string
           rate_used: number
           reference_number: string
           status: Database["public"]["Enums"]["transaction_status"]
@@ -785,6 +890,9 @@ export type Database = {
           operator_id: string
           original_transaction_id?: string | null
           rate_id?: string | null
+          rate_override_approved_by?: string | null
+          rate_override_reason?: string | null
+          rate_override_source?: string
           rate_used: number
           reference_number: string
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -811,6 +919,9 @@ export type Database = {
           operator_id?: string
           original_transaction_id?: string | null
           rate_id?: string | null
+          rate_override_approved_by?: string | null
+          rate_override_reason?: string | null
+          rate_override_source?: string
           rate_used?: number
           reference_number?: string
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -867,6 +978,13 @@ export type Database = {
             columns: ["rate_id"]
             isOneToOne: false
             referencedRelation: "exchange_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_rate_override_approved_by_fkey"
+            columns: ["rate_override_approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
             referencedColumns: ["id"]
           },
           {
