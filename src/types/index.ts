@@ -22,6 +22,17 @@ export type TransactionAuditLog = Database['public']['Tables']['transaction_audi
 export type DailyReconciliation = Database['public']['Tables']['daily_reconciliation']['Row']
 export type ComplianceAlert = Database['public']['Tables']['compliance_alerts']['Row']
 export type SystemSetting = Database['public']['Tables']['system_settings']['Row']
+export type OperatorNotification = Database['public']['Tables']['operator_notifications']['Row']
+
+// Compliance & Audit Types
+export type Customer = Database['public']['Tables']['customers']['Row']
+export type CustomerRiskFactor = Database['public']['Tables']['customer_risk_factors']['Row']
+export type CustomerRelationship = Database['public']['Tables']['customer_relationships']['Row']
+export type SuspiciousPattern = Database['public']['Tables']['suspicious_patterns']['Row']
+
+// View Types
+export type HighRiskCustomer = Database['public']['Views']['high_risk_customers']['Row']
+export type ActiveSuspiciousPattern = Database['public']['Views']['active_suspicious_patterns']['Row']
 
 // ============================================
 // Insert Types (for creating new records)
@@ -36,9 +47,17 @@ export type RateOverrideHistoryInsert = Database['public']['Tables']['rate_overr
 export type DrawerSessionInsert = Database['public']['Tables']['drawer_sessions']['Insert']
 export type DrawerDenominationCountInsert = Database['public']['Tables']['drawer_denomination_counts']['Insert']
 export type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
+export type TransactionAuditLogInsert = Database['public']['Tables']['transaction_audit_log']['Insert']
 export type DailyReconciliationInsert = Database['public']['Tables']['daily_reconciliation']['Insert']
 export type ComplianceAlertInsert = Database['public']['Tables']['compliance_alerts']['Insert']
 export type SystemSettingInsert = Database['public']['Tables']['system_settings']['Insert']
+export type OperatorNotificationInsert = Database['public']['Tables']['operator_notifications']['Insert']
+
+// Compliance & Audit Insert Types
+export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
+export type CustomerRiskFactorInsert = Database['public']['Tables']['customer_risk_factors']['Insert']
+export type CustomerRelationshipInsert = Database['public']['Tables']['customer_relationships']['Insert']
+export type SuspiciousPatternInsert = Database['public']['Tables']['suspicious_patterns']['Insert']
 
 // ============================================
 // Update Types (for modifying records)
@@ -56,6 +75,13 @@ export type TransactionUpdate = Database['public']['Tables']['transactions']['Up
 export type DailyReconciliationUpdate = Database['public']['Tables']['daily_reconciliation']['Update']
 export type ComplianceAlertUpdate = Database['public']['Tables']['compliance_alerts']['Update']
 export type SystemSettingUpdate = Database['public']['Tables']['system_settings']['Update']
+export type OperatorNotificationUpdate = Database['public']['Tables']['operator_notifications']['Update']
+
+// Compliance & Audit Update Types
+export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
+export type CustomerRiskFactorUpdate = Database['public']['Tables']['customer_risk_factors']['Update']
+export type CustomerRelationshipUpdate = Database['public']['Tables']['customer_relationships']['Update']
+export type SuspiciousPatternUpdate = Database['public']['Tables']['suspicious_patterns']['Update']
 
 // ============================================
 // Enum Types
@@ -66,6 +92,14 @@ export type TransactionStatus = Database['public']['Enums']['transaction_status'
 export type DrawerSessionStatus = Database['public']['Enums']['drawer_session_status']
 export type DenominationType = Database['public']['Enums']['denomination_type']
 export type RateSource = Database['public']['Enums']['rate_source']
+
+// Compliance & Audit Enum Types
+export type CustomerRiskLevel = Database['public']['Enums']['customer_risk_level']
+export type CustomerRelationshipType = Database['public']['Enums']['customer_relationship_type']
+export type CustomerRiskFactorType = Database['public']['Enums']['customer_risk_factor_type']
+export type PatternSeverity = Database['public']['Enums']['pattern_severity']
+export type SuspiciousPatternType = Database['public']['Enums']['suspicious_pattern_type']
+export type AuditActionType = Database['public']['Enums']['audit_action_type']
 
 export type DenominationCount = {
   denomination_id: string
@@ -81,6 +115,42 @@ export const TRANSACTION_STATUSES = ['completed', 'voided', 'refunded'] as const
 export const DRAWER_SESSION_STATUSES = ['open', 'closed', 'suspended'] as const
 export const DENOMINATION_TYPES = ['note', 'coin'] as const
 export const RATE_SOURCES = ['manual', 'feed', 'override'] as const
+
+// Compliance & Audit Enum Constants
+export const CUSTOMER_RISK_LEVELS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const
+export const CUSTOMER_RELATIONSHIP_TYPES = [
+  'same_id',
+  'same_address',
+  'same_phone',
+  'linked_transactions',
+  'manual_flag',
+] as const
+export const CUSTOMER_RISK_FACTOR_TYPES = [
+  'structuring',
+  'velocity',
+  'high_risk',
+  'back_to_back',
+  'group_transaction',
+  'unusual_behavior',
+  'watchlist_match',
+] as const
+export const PATTERN_SEVERITIES = ['HIGH', 'MEDIUM', 'LOW'] as const
+export const SUSPICIOUS_PATTERN_TYPES = [
+  'structuring',
+  'velocity',
+  'back_to_back',
+  'group',
+  'unusual',
+] as const
+export const AUDIT_ACTION_TYPES = [
+  'create',
+  'update',
+  'delete',
+  'view',
+  'void',
+  'refund',
+  'export',
+] as const
 
 // ============================================
 // Role Hierarchy Helper

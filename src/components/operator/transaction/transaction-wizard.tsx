@@ -99,7 +99,6 @@ export function TransactionWizard({ currencies, rates, latestDenominations }: Tr
      return latestDenominations.filter(d => d.currency_code === state.currency_code);
   }, [latestDenominations, state.currency_code]);
 
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
@@ -260,8 +259,9 @@ export function TransactionWizard({ currencies, rates, latestDenominations }: Tr
           baseAmount={state.base_amount}
           customer={state.customer}
           onUpdate={update}
-          onNext={() => goToStep('denominations')}
+          onNext={() => goToStep(activeDenoms.length > 0 ? 'denominations' : 'review')}
           onBack={() => goToStep('currency')}
+          showDenominationsStep={activeDenoms.length > 0}
         />
       )}
 

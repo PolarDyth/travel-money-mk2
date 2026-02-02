@@ -17,6 +17,7 @@ import { createErrorResult, createSuccessResult, ActionResult } from "@/lib/type
 import { transactionDraftSchema } from "./schemas"
 import type { TransactionDraft } from "./schemas"
 import { hasRoleOrHigher, ExchangeRateSettings, UserRole } from "@/types"
+import { createCustomer } from "@/lib/queries/customers"
 
 // Helper types imported from types
 import { Currency, ExchangeRate, Denomination } from "./types"
@@ -200,6 +201,161 @@ export async function submitTransaction(draft: TransactionDraft): Promise<Action
       )
     }
 
+    // 5. Create or find customer record
+    // A customer is created whenever we have name data, regardless of whether ID is present
+    // Matching is done by name + postcode (not by ID number)
+    let customerId: string | null = null
+    if (validatedDraft.customer?.first_name && validatedDraft.customer?.last_name) {
+      // Use postcode as phone identifier (required field for customers table)
+      const phoneValue = validatedDraft.customer.postcode || 'N/A'
+
+      // Build address string
+      const addressParts = [
+        validatedDraft.customer.address_line_1,
+        validatedDraft.customer.city,
+        validatedDraft.customer.postcode
+      ].filter(Boolean).join(', ')
+
+      // First, try to find existing customer by name + postcode
+      // We do this by searching (similar to the customer search API)
+      const { data: searchResults } = await supabase.rpc('search_customers_by_name', {
+        search_term: `${validatedDraft.customer.first_name} ${validatedDraft.customer.last_name}`,
+        search_branch_id: staff.branch_id
+      })
+
+      let foundCustomerId: string | null = null
+
+      if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
+        // Check each result for postcode match
+        for (const result of searchResults) {
+          const { data: decrypted } = await supabase.rpc('get_customer_with_decrypted_data', {
+            customer_id: result.id
+          })
+
+          if (decrypted) {
+            // The RPC function returns an array - take the first element
+            const decryptedData = Array.isArray(decrypted) ? decrypted[0] : decrypted
+
+            if (!decryptedData) continue
+
+            const address = (decryptedData as any).address
+            // Extract postcode from address field (format: "Address Line 1, City, Postcode")
+            const addressParts = (address || '').split(',').map(p => p.trim())
+            const extractedPostcode = addressParts.length > 0 ? addressParts[addressParts.length - 1] : ''
+
+            const searchPostcode = (validatedDraft.customer.postcode || '').replace(/\s/g, '').toUpperCase()
+            const customerPostcode = extractedPostcode.replace(/\s/g, '').toUpperCase()
+
+            if (customerPostcode === searchPostcode) {
+              foundCustomerId = result.id
+              break
+            }
+          }
+        }
+      }
+
+      if (foundCustomerId) {
+        // Existing customer found - use their ID and update their stats
+        customerId = foundCustomerId
+
+        // Get current customer values
+        const { data: currentCustomer } = await supabase
+          .from('customers')
+          .select('transaction_count, total_gbp_volume')
+          .eq('id', foundCustomerId)
+          .single()
+
+        // Update customer stats
+        await supabase
+          .from('customers')
+          .update({
+            last_seen_at: new Date().toISOString(),
+            transaction_count: (currentCustomer?.transaction_count || 0) + 1,
+            total_gbp_volume: (currentCustomer?.total_gbp_volume || 0) + validatedDraft.base_amount,
+          })
+          .eq('id', foundCustomerId)
+      } else {
+        // No existing customer - create a new one
+        // ID number is optional - only encrypt if provided
+        const idNumber = validatedDraft.customer.id_reference
+
+        const customerResult = await createCustomer({
+          first_name: validatedDraft.customer.first_name,
+          last_name: validatedDraft.customer.last_name,
+          phone: phoneValue,
+          id_number: idNumber || 'N/A', // Required field, use placeholder if not provided
+          id_type: validatedDraft.customer.id_type,
+          email: validatedDraft.customer.city ? addressParts : undefined,
+          address: addressParts || undefined,
+        }, staff.branch_id)
+
+        if (!customerResult.success) {
+          // Customer creation failed - this is critical, fail the transaction
+          const error = new DatabaseError(
+            customerResult.error?.message || "Failed to create customer record",
+            "Unable to create customer record. Please try again.",
+            {
+              customerData: {
+                first_name: validatedDraft.customer.first_name,
+                last_name: validatedDraft.customer.last_name,
+              },
+              creationError: customerResult.error,
+            }
+          )
+          captureError(error, {
+            action: "submitTransaction",
+            customerFirstName: validatedDraft.customer.first_name,
+            customerLastName: validatedDraft.customer.last_name,
+            branchId: staff.branch_id,
+          })
+          return createErrorResult(
+            error.code,
+            error.message,
+            error.userMessage,
+            error.details
+          )
+        }
+
+        if (!customerResult.data) {
+          const error = new DatabaseError(
+            "Customer creation returned no data",
+            "Unable to create customer record. Please try again."
+          )
+          captureError(error, {
+            action: "submitTransaction",
+            branchId: staff.branch_id,
+          })
+          return createErrorResult(
+            error.code,
+            error.message,
+            error.userMessage
+          )
+        }
+
+        customerId = customerResult.data.id
+
+        // Initialize the new customer with first_seen_at and initial stats
+        const { error: initError } = await supabase
+          .from('customers')
+          .update({
+            first_seen_at: new Date().toISOString(),
+            last_seen_at: new Date().toISOString(),
+            transaction_count: 1,
+            total_gbp_volume: validatedDraft.base_amount,
+          })
+          .eq('id', customerId)
+
+        if (initError) {
+          // Log the error but don't fail the transaction - customer was created
+          captureError(initError, {
+            action: "submitTransaction",
+            note: "Customer created but stats initialization failed",
+            customerId,
+          })
+        }
+      }
+    }
+
     // Generate unique reference number using UUID
     const referenceUUID = crypto.randomUUID()
     const referenceDate = new Date().toISOString().slice(0, 10).replace(/-/g, '')
@@ -211,6 +367,7 @@ export async function submitTransaction(draft: TransactionDraft): Promise<Action
         branch_id: staff.branch_id,
         operator_id: staff.id,
         drawer_session_id: session.id,
+        customer_id: customerId,
         transaction_type: validatedDraft.type,
         foreign_currency_code: validatedDraft.currency_code,
         foreign_amount: validatedDraft.foreign_amount,

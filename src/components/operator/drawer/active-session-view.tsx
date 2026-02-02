@@ -46,10 +46,9 @@ export function ActiveSessionView({ session, denominations, exchangeRates }: Act
             <p className="text-muted-foreground">Session ID: {session.sessionId.slice(0, 8)}...</p>
          </div>
          <div className="flex gap-3">
-             <SpotCheckDialog 
-                session={session} 
-                denominations={denominations} 
-                exchangeRates={exchangeRates} 
+             <SpotCheckDialog
+                denominations={denominations}
+                exchangeRates={exchangeRates}
              />
              <Button onClick={() => setMode('close')} variant="default">
                 <Lock className="mr-2 h-4 w-4" />
@@ -139,7 +138,6 @@ function SpotCheckDialog({ denominations, exchangeRates }: Omit<ActiveSessionVie
                     <MultiCurrencyCounter
                         denominations={denominations}
                         exchangeRates={exchangeRates}
-                        mode="spot-check"
                         mandatoryCurrencies={[]} // No Mandatory for spot check
                         onCountsChange={(c, t) => {
                             setCounts(c);

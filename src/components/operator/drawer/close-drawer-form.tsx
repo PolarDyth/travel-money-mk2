@@ -121,7 +121,6 @@ export function CloseDrawerForm({ session, denominations, exchangeRates, onCance
             <MultiCurrencyCounter
                 denominations={denominations}
                 exchangeRates={exchangeRates}
-                mode="closing"
                 mandatoryCurrencies={['GBP', 'USD', 'EUR']}
                 suggestedCurrencies={usedCurrencies}
                 onCountsChange={handleCountsChange}

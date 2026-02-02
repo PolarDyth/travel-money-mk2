@@ -11,6 +11,29 @@ export const rateOverrideSchema = z.object({
 
 export type RateOverrideInput = z.infer<typeof rateOverrideSchema>
 
+// Zod schema for customer search
+export const customerSearchSchema = z.object({
+  first_name: z.string().trim().min(1, "First name is required"),
+  last_name: z.string().trim().min(1, "Last name is required"),
+  postcode: z.string().trim().min(1, "Postcode is required"),
+})
+
+export type CustomerSearchInput = z.infer<typeof customerSearchSchema>
+
+// Zod schema for customer data returned from search (ID is always excluded)
+export const customerSearchResultSchema = z.object({
+  id: z.string().uuid(),
+  first_name: z.string(),
+  last_name: z.string(),
+  address_line_1: z.string().optional(),
+  city: z.string().optional(),
+  postcode: z.string().optional(),
+  id_type: z.string().optional(),
+  // Note: id_reference is intentionally excluded for security
+})
+
+export type CustomerSearchResult = z.infer<typeof customerSearchResultSchema>
+
 // Zod validation schema for transactions
 export const transactionDraftSchema = z.object({
   type: z.enum(['buy', 'sell']),
@@ -35,7 +58,7 @@ export const transactionDraftSchema = z.object({
       denomination_id: z.string().uuid("Invalid denomination ID"),
       count: z.number().int().min(0, "Count must be non-negative integer"),
     })
-  ).min(1, "At least one denomination is required"),
+  ).optional(),
 })
 
 export type TransactionDraft = z.infer<typeof transactionDraftSchema>

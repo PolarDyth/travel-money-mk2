@@ -33,6 +33,19 @@ export enum ErrorCode {
   INVALID_RATE = "INVALID_RATE",
   TRANSACTION_ALREADY_VOIDED = "TRANSACTION_ALREADY_VOIDED",
 
+  // Compliance & Audit
+  CUSTOMER_NOT_FOUND = "CUSTOMER_NOT_FOUND",
+  CUSTOMER_ALREADY_EXISTS = "CUSTOMER_ALREADY_EXISTS",
+  CUSTOMER_ON_WATCHLIST = "CUSTOMER_ON_WATCHLIST",
+  CUSTOMER_RISK_TOO_HIGH = "CUSTOMER_RISK_TOO_HIGH",
+  KYC_REQUIRED = "KYC_REQUIRED",
+  KYC_INVALID = "KYC_INVALID",
+  ENCRYPTION_FAILED = "ENCRYPTION_FAILED",
+  DECRYPTION_FAILED = "DECRYPTION_FAILED",
+  AUDIT_LOG_FAILED = "AUDIT_LOG_FAILED",
+  SUSPICIOUS_PATTERN_DETECTED = "SUSPICIOUS_PATTERN_DETECTED",
+  TRANSACTION_LIMIT_EXCEEDED = "TRANSACTION_LIMIT_EXCEEDED",
+
   // Network & External Services
   NETWORK_ERROR = "NETWORK_ERROR",
   SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE",
@@ -273,4 +286,180 @@ function getSupabaseUserMessage(error: { message: string; code?: string }): stri
  */
 export function isOperationalError(error: Error): boolean {
   return error instanceof AppErrorClass && error.isOperational
+}
+
+// ============================================
+// Compliance & Audit Error Classes
+// ============================================
+
+/**
+ * Customer not found error
+ */
+export class CustomerNotFoundError extends AppErrorClass {
+  constructor(identifier?: string, details?: Record<string, unknown>) {
+    const message = identifier
+      ? `Customer '${identifier}' not found`
+      : "Customer not found"
+    super(
+      ErrorCode.CUSTOMER_NOT_FOUND,
+      message,
+      "The requested customer could not be found.",
+      { identifier, ...details }
+    )
+  }
+}
+
+/**
+ * Customer already exists error
+ */
+export class CustomerAlreadyExistsError extends AppErrorClass {
+  constructor(identifier: string, details?: Record<string, unknown>) {
+    super(
+      ErrorCode.CUSTOMER_ALREADY_EXISTS,
+      `Customer '${identifier}' already exists`,
+      "A customer with this information already exists.",
+      { identifier, ...details }
+    )
+  }
+}
+
+/**
+ * Customer on watchlist error
+ */
+export class CustomerOnWatchlistError extends AppErrorClass {
+  constructor(customerId: string, reason?: string, details?: Record<string, unknown>) {
+    super(
+      ErrorCode.CUSTOMER_ON_WATCHLIST,
+      `Customer ${customerId} is on watchlist${reason ? `: ${reason}` : ""}`,
+      "This customer is flagged for additional verification.",
+      { customerId, reason, ...details }
+    )
+  }
+}
+
+/**
+ * Customer risk too high error
+ */
+export class CustomerRiskTooHighError extends AppErrorClass {
+  constructor(
+    customerId: string,
+    riskScore: number,
+    riskLevel: string,
+    details?: Record<string, unknown>
+  ) {
+    super(
+      ErrorCode.CUSTOMER_RISK_TOO_HIGH,
+      `Customer ${customerId} has risk score ${riskScore} (${riskLevel})`,
+      "This customer's risk level requires additional approval.",
+      { customerId, riskScore, riskLevel, ...details }
+    )
+  }
+}
+
+/**
+ * KYC required error
+ */
+export class KYCRequiredError extends AppErrorClass {
+  constructor(details?: Record<string, unknown>) {
+    super(
+      ErrorCode.KYC_REQUIRED,
+      "KYC information required",
+      "Customer identity verification is required before proceeding.",
+      details
+    )
+  }
+}
+
+/**
+ * KYC invalid error
+ */
+export class KYCInvalidError extends AppErrorClass {
+  constructor(reason: string, details?: Record<string, unknown>) {
+    super(
+      ErrorCode.KYC_INVALID,
+      `KYC validation failed: ${reason}`,
+      "The provided customer information could not be verified.",
+      { reason, ...details }
+    )
+  }
+}
+
+/**
+ * Encryption failed error
+ */
+export class EncryptionFailedError extends AppErrorClass {
+  constructor(message: string = "Failed to encrypt data", details?: Record<string, unknown>) {
+    super(
+      ErrorCode.ENCRYPTION_FAILED,
+      message,
+      "Failed to securely store customer information.",
+      details
+    )
+  }
+}
+
+/**
+ * Decryption failed error
+ */
+export class DecryptionFailedError extends AppErrorClass {
+  constructor(message: string = "Failed to decrypt data", details?: Record<string, unknown>) {
+    super(
+      ErrorCode.DECRYPTION_FAILED,
+      message,
+      "Failed to read customer information.",
+      details
+    )
+  }
+}
+
+/**
+ * Audit log failed error
+ */
+export class AuditLogFailedError extends AppErrorClass {
+  constructor(action: string, reason: string, details?: Record<string, unknown>) {
+    super(
+      ErrorCode.AUDIT_LOG_FAILED,
+      `Failed to log audit event '${action}': ${reason}`,
+      "An internal error occurred while recording this action.",
+      { action, reason, ...details }
+    )
+  }
+}
+
+/**
+ * Suspicious pattern detected error
+ */
+export class SuspiciousPatternDetectedError extends AppErrorClass {
+  constructor(
+    patternType: string,
+    severity: string,
+    description: string,
+    details?: Record<string, unknown>
+  ) {
+    super(
+      ErrorCode.SUSPICIOUS_PATTERN_DETECTED,
+      `Suspicious pattern detected: ${patternType} (${severity})`,
+      `Suspicious activity detected: ${description}`,
+      { patternType, severity, description, ...details }
+    )
+  }
+}
+
+/**
+ * Transaction limit exceeded error
+ */
+export class TransactionLimitExceededError extends AppErrorClass {
+  constructor(
+    limitType: string,
+    currentAmount: number,
+    limit: number,
+    details?: Record<string, unknown>
+  ) {
+    super(
+      ErrorCode.TRANSACTION_LIMIT_EXCEEDED,
+      `${limitType} limit exceeded: ${currentAmount} > ${limit}`,
+      `Transaction limit exceeded. Maximum: ${limit}, Current: ${currentAmount}`,
+      { limitType, currentAmount, limit, ...details }
+    )
+  }
 }

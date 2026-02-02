@@ -64,7 +64,6 @@ export function OpenDrawerForm({ denominations, exchangeRates, branchId }: OpenD
             <MultiCurrencyCounter
                 denominations={denominations}
                 exchangeRates={exchangeRates}
-                mode="opening"
                 onCountsChange={handleCountsChange}
             />
         </CardContent>

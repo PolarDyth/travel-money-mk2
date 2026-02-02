@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -216,6 +214,213 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address_bytea: string | null
+          branch_id: string
+          created_at: string
+          date_of_birth_bytea: string | null
+          document_reference: string | null
+          email_bytea: string | null
+          first_name_bytea: string
+          first_seen_at: string
+          id: string
+          id_number_bytea: string
+          id_type_bytea: string | null
+          is_on_watchlist: boolean
+          last_name_bytea: string
+          last_seen_at: string
+          phone_bytea: string | null
+          risk_level: Database["public"]["Enums"]["customer_risk_level"]
+          risk_score: number
+          total_gbp_volume: number
+          transaction_count: number
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+          watchlist_reason: string | null
+        }
+        Insert: {
+          address_bytea?: string | null
+          branch_id: string
+          created_at?: string
+          date_of_birth_bytea?: string | null
+          document_reference?: string | null
+          email_bytea?: string | null
+          first_name_bytea: string
+          first_seen_at?: string
+          id?: string
+          id_number_bytea: string
+          id_type_bytea?: string | null
+          is_on_watchlist?: boolean
+          last_name_bytea: string
+          last_seen_at?: string
+          phone_bytea?: string | null
+          risk_level?: Database["public"]["Enums"]["customer_risk_level"]
+          risk_score?: number
+          total_gbp_volume?: number
+          transaction_count?: number
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          watchlist_reason?: string | null
+        }
+        Update: {
+          address_bytea?: string | null
+          branch_id?: string
+          created_at?: string
+          date_of_birth_bytea?: string | null
+          document_reference?: string | null
+          email_bytea?: string | null
+          first_name_bytea?: string
+          first_seen_at?: string
+          id?: string
+          id_number_bytea?: string
+          id_type_bytea?: string | null
+          is_on_watchlist?: boolean
+          last_name_bytea?: string
+          last_seen_at?: string
+          phone_bytea?: string | null
+          risk_level?: Database["public"]["Enums"]["customer_risk_level"]
+          risk_score?: number
+          total_gbp_volume?: number
+          transaction_count?: number
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          watchlist_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_relationships: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          customer_a_id: string
+          customer_b_id: string
+          detected_at: string
+          detected_by: string | null
+          evidence: Json | null
+          id: string
+          metadata: Json | null
+          relationship_type: Database["public"]["Enums"]["customer_relationship_type"]
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          customer_a_id: string
+          customer_b_id: string
+          detected_at?: string
+          detected_by?: string | null
+          evidence?: Json | null
+          id?: string
+          metadata?: Json | null
+          relationship_type: Database["public"]["Enums"]["customer_relationship_type"]
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          customer_a_id?: string
+          customer_b_id?: string
+          detected_at?: string
+          detected_by?: string | null
+          evidence?: Json | null
+          id?: string
+          metadata?: Json | null
+          relationship_type?: Database["public"]["Enums"]["customer_relationship_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_relationships_customer_a_id_fkey"
+            columns: ["customer_a_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_relationships_customer_b_id_fkey"
+            columns: ["customer_b_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_relationships_detected_by_fkey"
+            columns: ["detected_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_risk_factors: {
+        Row: {
+          created_at: string
+          customer_id: string
+          description: string
+          detected_at: string
+          detected_by: string | null
+          expires_at: string | null
+          factor_type: Database["public"]["Enums"]["customer_risk_factor_type"]
+          id: string
+          metadata: Json | null
+          related_transaction_ids: string[] | null
+          score_impact: number
+          severity: Database["public"]["Enums"]["pattern_severity"]
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          description: string
+          detected_at?: string
+          detected_by?: string | null
+          expires_at?: string | null
+          factor_type: Database["public"]["Enums"]["customer_risk_factor_type"]
+          id?: string
+          metadata?: Json | null
+          related_transaction_ids?: string[] | null
+          score_impact: number
+          severity: Database["public"]["Enums"]["pattern_severity"]
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          description?: string
+          detected_at?: string
+          detected_by?: string | null
+          expires_at?: string | null
+          factor_type?: Database["public"]["Enums"]["customer_risk_factor_type"]
+          id?: string
+          metadata?: Json | null
+          related_transaction_ids?: string[] | null
+          score_impact?: number
+          severity?: Database["public"]["Enums"]["pattern_severity"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_risk_factors_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_risk_factors_detected_by_fkey"
+            columns: ["detected_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -477,6 +682,60 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rate_settings: {
+        Row: {
+          allow_rate_override: boolean
+          branch_id: string
+          created_at: string
+          currency_code: string
+          id: string
+          is_enabled: boolean
+          max_override_percentage: number | null
+          require_supervisor_approval: boolean
+          supervisor_override_reason_required: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_rate_override?: boolean
+          branch_id: string
+          created_at?: string
+          currency_code: string
+          id?: string
+          is_enabled?: boolean
+          max_override_percentage?: number | null
+          require_supervisor_approval?: boolean
+          supervisor_override_reason_required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_rate_override?: boolean
+          branch_id?: string
+          created_at?: string
+          currency_code?: string
+          id?: string
+          is_enabled?: boolean
+          max_override_percentage?: number | null
+          require_supervisor_approval?: boolean
+          supervisor_override_reason_required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rate_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rate_settings_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       exchange_rates: {
         Row: {
           branch_id: string | null
@@ -544,60 +803,6 @@ export type Database = {
           },
         ]
       }
-      exchange_rate_settings: {
-        Row: {
-          allow_rate_override: boolean
-          branch_id: string
-          created_at: string
-          currency_code: string
-          id: string
-          is_enabled: boolean
-          max_override_percentage: number | null
-          require_supervisor_approval: boolean
-          supervisor_override_reason_required: boolean
-          updated_at: string
-        }
-        Insert: {
-          allow_rate_override?: boolean
-          branch_id: string
-          created_at?: string
-          currency_code: string
-          id?: string
-          is_enabled?: boolean
-          max_override_percentage?: number | null
-          require_supervisor_approval?: boolean
-          supervisor_override_reason_required?: boolean
-          updated_at?: string
-        }
-        Update: {
-          allow_rate_override?: boolean
-          branch_id?: string
-          created_at?: string
-          currency_code?: string
-          id?: string
-          is_enabled?: boolean
-          max_override_percentage?: number | null
-          require_supervisor_approval?: boolean
-          supervisor_override_reason_required?: boolean
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "exchange_rate_settings_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "exchange_rate_settings_currency_code_fkey"
-            columns: ["currency_code"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
       operator_notifications: {
         Row: {
           created_at: string
@@ -639,6 +844,54 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "drawer_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_override_history: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          id: string
+          original_rate: number
+          override_percentage: number | null
+          override_rate: number
+          override_reason: string
+          transaction_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          id?: string
+          original_rate: number
+          override_percentage?: number | null
+          override_rate: number
+          override_reason: string
+          transaction_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          id?: string
+          original_rate?: number
+          override_percentage?: number | null
+          override_rate?: number
+          override_reason?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_override_history_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_override_history_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -702,50 +955,52 @@ export type Database = {
           },
         ]
       }
-      rate_override_history: {
+      suspicious_patterns: {
         Row: {
-          approved_at: string
-          approved_by: string
+          branch_id: string | null
+          created_at: string
+          description: string
           id: string
-          original_rate: number
-          override_percentage: number | null
-          override_rate: number
-          override_reason: string
-          transaction_id: string
+          is_active: boolean
+          metadata: Json | null
+          name: string
+          pattern_type: Database["public"]["Enums"]["suspicious_pattern_type"]
+          severity: Database["public"]["Enums"]["pattern_severity"]
+          thresholds: Json
+          updated_at: string
         }
         Insert: {
-          approved_at?: string
-          approved_by: string
+          branch_id?: string | null
+          created_at?: string
+          description: string
           id?: string
-          original_rate: number
-          override_percentage?: number | null
-          override_rate: number
-          override_reason: string
-          transaction_id: string
+          is_active?: boolean
+          metadata?: Json | null
+          name: string
+          pattern_type: Database["public"]["Enums"]["suspicious_pattern_type"]
+          severity: Database["public"]["Enums"]["pattern_severity"]
+          thresholds: Json
+          updated_at?: string
         }
         Update: {
-          approved_at?: string
-          approved_by?: string
+          branch_id?: string | null
+          created_at?: string
+          description?: string
           id?: string
-          original_rate?: number
-          override_percentage?: number | null
-          override_rate?: number
-          override_reason?: string
-          transaction_id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          name?: string
+          pattern_type?: Database["public"]["Enums"]["suspicious_pattern_type"]
+          severity?: Database["public"]["Enums"]["pattern_severity"]
+          thresholds?: Json
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "rate_override_history_approved_by_fkey"
-            columns: ["approved_by"]
+            foreignKeyName: "suspicious_patterns_branch_id_fkey"
+            columns: ["branch_id"]
             isOneToOne: false
-            referencedRelation: "staff_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rate_override_history_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]
@@ -785,7 +1040,11 @@ export type Database = {
       transaction_audit_log: {
         Row: {
           action: string
+          action_type: Database["public"]["Enums"]["audit_action_type"]
+          api_endpoint: string | null
           details: Json | null
+          device_fingerprint: string | null
+          field_changes: Json | null
           id: string
           ip_address: unknown
           new_status: Database["public"]["Enums"]["transaction_status"] | null
@@ -794,12 +1053,17 @@ export type Database = {
           previous_status:
             | Database["public"]["Enums"]["transaction_status"]
             | null
+          session_id: string | null
           transaction_id: string
           user_agent: string | null
         }
         Insert: {
           action: string
+          action_type?: Database["public"]["Enums"]["audit_action_type"]
+          api_endpoint?: string | null
           details?: Json | null
+          device_fingerprint?: string | null
+          field_changes?: Json | null
           id?: string
           ip_address?: unknown
           new_status?: Database["public"]["Enums"]["transaction_status"] | null
@@ -808,12 +1072,17 @@ export type Database = {
           previous_status?:
             | Database["public"]["Enums"]["transaction_status"]
             | null
+          session_id?: string | null
           transaction_id: string
           user_agent?: string | null
         }
         Update: {
           action?: string
+          action_type?: Database["public"]["Enums"]["audit_action_type"]
+          api_endpoint?: string | null
           details?: Json | null
+          device_fingerprint?: string | null
+          field_changes?: Json | null
           id?: string
           ip_address?: unknown
           new_status?: Database["public"]["Enums"]["transaction_status"] | null
@@ -822,6 +1091,7 @@ export type Database = {
           previous_status?:
             | Database["public"]["Enums"]["transaction_status"]
             | null
+          session_id?: string | null
           transaction_id?: string
           user_agent?: string | null
         }
@@ -850,6 +1120,7 @@ export type Database = {
           commission_amount: number | null
           completed_at: string | null
           created_at: string
+          customer_id: string | null
           customer_id_number: string | null
           customer_id_type: string | null
           customer_id_verified_by: string | null
@@ -858,16 +1129,21 @@ export type Database = {
           foreign_amount: number
           foreign_currency_code: string
           id: string
+          last_viewed_at: string | null
           operator_id: string
           original_transaction_id: string | null
           rate_id: string | null
           rate_override_approved_by: string | null
           rate_override_reason: string | null
-          rate_override_source: string
+          rate_override_source: string | null
           rate_used: number
           reference_number: string
+          session_device_fingerprint: string | null
+          session_ip_address: unknown
+          session_user_agent: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           transaction_type: Database["public"]["Enums"]["transaction_type"]
+          view_count: number
           void_reason: string | null
           voided_at: string | null
           voided_by: string | null
@@ -879,6 +1155,7 @@ export type Database = {
           commission_amount?: number | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_id_number?: string | null
           customer_id_type?: string | null
           customer_id_verified_by?: string | null
@@ -887,16 +1164,21 @@ export type Database = {
           foreign_amount: number
           foreign_currency_code: string
           id?: string
+          last_viewed_at?: string | null
           operator_id: string
           original_transaction_id?: string | null
           rate_id?: string | null
           rate_override_approved_by?: string | null
           rate_override_reason?: string | null
-          rate_override_source?: string
+          rate_override_source?: string | null
           rate_used: number
           reference_number: string
+          session_device_fingerprint?: string | null
+          session_ip_address?: unknown
+          session_user_agent?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_type: Database["public"]["Enums"]["transaction_type"]
+          view_count?: number
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
@@ -908,6 +1190,7 @@ export type Database = {
           commission_amount?: number | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_id_number?: string | null
           customer_id_type?: string | null
           customer_id_verified_by?: string | null
@@ -916,16 +1199,21 @@ export type Database = {
           foreign_amount?: number
           foreign_currency_code?: string
           id?: string
+          last_viewed_at?: string | null
           operator_id?: string
           original_transaction_id?: string | null
           rate_id?: string | null
           rate_override_approved_by?: string | null
           rate_override_reason?: string | null
-          rate_override_source?: string
+          rate_override_source?: string | null
           rate_used?: number
           reference_number?: string
+          session_device_fingerprint?: string | null
+          session_ip_address?: unknown
+          session_user_agent?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_type?: Database["public"]["Enums"]["transaction_type"]
+          view_count?: number
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
@@ -936,6 +1224,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -998,9 +1293,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_suspicious_patterns: {
+        Row: {
+          branch_id: string | null
+          branch_name: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          name: string | null
+          pattern_type:
+            | Database["public"]["Enums"]["suspicious_pattern_type"]
+            | null
+          severity: Database["public"]["Enums"]["pattern_severity"] | null
+          thresholds: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspicious_patterns_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      high_risk_customers: {
+        Row: {
+          branch_id: string | null
+          branch_name: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string | null
+          is_on_watchlist: boolean | null
+          last_name: string | null
+          phone: string | null
+          risk_level: Database["public"]["Enums"]["customer_risk_level"] | null
+          risk_score: number | null
+          total_gbp_volume: number | null
+          transaction_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      decrypt_pii: { Args: { ciphertext: string }; Returns: string }
+      encrypt_pii: { Args: { plaintext: string }; Returns: string }
       get_current_branch_id: { Args: never; Returns: string }
       get_current_rate: {
         Args: { p_branch_id?: string; p_currency_code: string }
@@ -1016,16 +1362,87 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_current_staff_id: { Args: never; Returns: string }
+      get_customer_with_decrypted_data: {
+        Args: { customer_id: string }
+        Returns: {
+          address: string
+          branch_id: string
+          created_at: string
+          date_of_birth: string
+          email: string
+          first_name: string
+          id: string
+          id_number: string
+          id_type: string
+          is_on_watchlist: boolean
+          last_name: string
+          phone: string
+          risk_level: Database["public"]["Enums"]["customer_risk_level"]
+          risk_score: number
+          total_gbp_volume: number
+          transaction_count: number
+          updated_at: string
+          watchlist_reason: string
+        }[]
+      }
+      get_encryption_key: { Args: never; Returns: string }
       has_role_or_higher: {
         Args: { required_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
+      has_role_or_lower: {
+        Args: { required_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
       is_active_staff: { Args: never; Returns: boolean }
+      search_customers_by_name: {
+        Args: { search_branch_id?: string; search_term: string }
+        Returns: {
+          email: string
+          first_name: string
+          id: string
+          is_on_watchlist: boolean
+          last_name: string
+          phone: string
+          risk_level: Database["public"]["Enums"]["customer_risk_level"]
+          risk_score: number
+        }[]
+      }
     }
     Enums: {
+      audit_action_type:
+        | "create"
+        | "update"
+        | "delete"
+        | "view"
+        | "void"
+        | "refund"
+        | "export"
+      customer_relationship_type:
+        | "same_id"
+        | "same_address"
+        | "same_phone"
+        | "linked_transactions"
+        | "manual_flag"
+      customer_risk_factor_type:
+        | "structuring"
+        | "velocity"
+        | "high_risk"
+        | "back_to_back"
+        | "group_transaction"
+        | "unusual_behavior"
+        | "watchlist_match"
+      customer_risk_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
       denomination_type: "note" | "coin"
       drawer_session_status: "open" | "closed" | "suspended"
+      pattern_severity: "HIGH" | "MEDIUM" | "LOW"
       rate_source: "manual" | "feed" | "override"
+      suspicious_pattern_type:
+        | "structuring"
+        | "velocity"
+        | "back_to_back"
+        | "group"
+        | "unusual"
       transaction_status: "completed" | "voided" | "refunded"
       transaction_type: "buy" | "sell"
       user_role: "operator" | "supervisor" | "manager" | "admin"
@@ -1156,9 +1573,43 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      audit_action_type: [
+        "create",
+        "update",
+        "delete",
+        "view",
+        "void",
+        "refund",
+        "export",
+      ],
+      customer_relationship_type: [
+        "same_id",
+        "same_address",
+        "same_phone",
+        "linked_transactions",
+        "manual_flag",
+      ],
+      customer_risk_factor_type: [
+        "structuring",
+        "velocity",
+        "high_risk",
+        "back_to_back",
+        "group_transaction",
+        "unusual_behavior",
+        "watchlist_match",
+      ],
+      customer_risk_level: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
       denomination_type: ["note", "coin"],
       drawer_session_status: ["open", "closed", "suspended"],
+      pattern_severity: ["HIGH", "MEDIUM", "LOW"],
       rate_source: ["manual", "feed", "override"],
+      suspicious_pattern_type: [
+        "structuring",
+        "velocity",
+        "back_to_back",
+        "group",
+        "unusual",
+      ],
       transaction_status: ["completed", "voided", "refunded"],
       transaction_type: ["buy", "sell"],
       user_role: ["operator", "supervisor", "manager", "admin"],
