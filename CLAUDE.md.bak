@@ -1,5 +1,33 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 This repository is a retail POS system for a currency exchange bureau (M&S-style).
 It is used by operators in-store, so correctness, clarity, and safety matter more than clever code.
+
+## Common Commands
+
+### Development
+```bash
+npm run dev          # Start development server (http://localhost:3000)
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # Run ESLint
+```
+
+### Database Scripts
+```bash
+npx tsx scripts/seed-admin.ts <email> <password>     # Create admin user
+npx tsx scripts/seed-rates.ts                         # Seed exchange rates
+```
+
+### Environment Setup
+Create `.env.local` with:
+```
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+```
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router)
@@ -15,38 +43,71 @@ It is used by operators in-store, so correctness, clarity, and safety matter mor
 ## Project Structure
 ```
 src/
-├── app/                    # Next.js App Router pages & actions
-│   ├── admin/              # Role-based route groups
+├── app/
+│   ├── (auth)/             # Route group: auth pages (login, forgot-password, callback)
+│   │   └── auth/           # Auth flows with Server Actions
+│   ├── (dashboard)/        # Route group: protected dashboards with shared layout
+│   │   ├── admin/          # Admin-only routes with Server Actions
+│   │   ├── manager/        # Manager-only routes
+│   │   ├── operator/       # Operator-only routes (drawer, transaction)
+│   │   └── supervisor/     # Supervisor-only routes with Server Actions
 │   ├── api/                # Route Handlers
-│   ├── auth/               # Authentication flows
-│   ├── operator/           # Core transaction flows
-│   └── ...
+│   └── layout.tsx          # Root layout with providers
 ├── components/
 │   ├── dashboard/          # Role-specific dashboard views
-│   ├── ui/                 # shadcn/ui components
-│   └── ...
+│   └── ui/                 # shadcn/ui components
 ├── lib/
-│   ├── hooks/              # Custom React hooks
-│   ├── queries/            # Data fetching logic (Server & Client)
-│   ├── transaction-utils.ts # Core business logic
-│   └── utils.ts            # UI helpers
+│   ├── hooks/              # Custom React hooks (use-user, use-keyboard-shortcuts)
+│   ├── queries/            # Data fetching logic (operator, supervisor, admin, manager)
+│   └── utils.ts            # UI helpers (cn for classnames)
 ├── types/
-│   ├── database.ts         # Supabase generated types (do not edit manually)
-│   └── index.ts            # Domain types & helpers (use this)
+│   ├── database.ts         # Supabase generated types (DO NOT EDIT)
+│   └── index.ts            # Domain types & helpers (import from here)
 ├── utils/
-│   └── supabase/           # Auth & Client initialization
-scripts/                    # Seeding & utility scripts
+│   └── supabase/           # Auth & Client initialization (server.ts, client.ts)
+scripts/                    # Seeding & utility scripts (seed-admin.ts, seed-rates.ts)
 docs/                       # Documentation
 ```
 
+### Route Groups
+- `(auth)`: Public authentication routes with minimal layout
+- `(dashboard)`: Protected routes requiring authentication, shared dashboard layout
+- Each role subfolder (admin, operator, supervisor, manager) has its own layout for RBAC
+
 ## Architecture & Patterns
-- **Data Fetching**: 
-  - Prefer Server Components fetching data directly via `src/lib/queries`.
-  - Use **Server Actions** (`actions.ts`) for mutations (create/update).
-  - **No React Query**: State is managed via Server Actions/App Router or local state.
-- **Transactions**: 
-  - Complex wizard flows use `use-transaction.ts` hook.
-  - Final submission is a Server Action.
+
+### Authentication (Supabase SSR)
+- Server-side: `createClient()` from `@/utils/supabase/server` (Server Components/Actions)
+- Client-side: `createClient()` from `@/utils/supabase/client` (Client Components/hooks)
+- Auth state changes handled via `supabase.auth.onAuthStateChange()` in `use-user` hook
+- Middleware protection via RLS policies + `staff_profiles.is_active` check
+
+### Data Fetching
+- **Server Components**: Fetch data directly via `src/lib/queries` functions
+- **Server Actions**: Use for all mutations (create/update/delete) in `actions.ts` files
+- **Client Components**: Use `use-user` hook for auth state; direct Supabase client queries
+- **No React Query**: State managed via Server Actions/App Router or local state
+
+### Transaction Flow
+- Complex wizard flows use client-side state management
+- Final submission via `submitTransaction()` Server Action in `src/app/(dashboard)/operator/transaction/actions.ts`
+- Transaction references auto-generated: `TXN-{BRANCH}-{YYYYMMDD}-{SEQ}`
+
+### Server Actions Pattern
+```typescript
+'use server'
+
+import { createClient } from "@/utils/supabase/server"
+import { revalidatePath } from "next/cache"
+
+export async function someAction(params: Params) {
+  const supabase = await createClient()
+  // 1. Get authenticated user
+  // 2. Perform mutation
+  // 3. Revalidate paths
+  return { success: true, data }
+}
+```
 
 ## Database Schema
 
